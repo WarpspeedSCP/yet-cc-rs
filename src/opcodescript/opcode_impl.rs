@@ -7,6 +7,7 @@ impl SingleByteOpcode {
   pub fn new(address: usize, input: &[u8]) -> Self {
     Self {
       address: address as u32,
+      actual_address: address as u32,
       opcode: input[address],
     }
   }
@@ -22,6 +23,7 @@ impl BasicOpcode2 {
     } = GenericBasicOpcode::<2>::new(address, input);
     Self {
       address: address as u32,
+      actual_address: address as u32,
       opcode,
       arg1: transmute_to_u16(0, &data),
     }
@@ -38,6 +40,7 @@ impl BasicOpcode3 {
     } = GenericBasicOpcode::<3>::new(address, input);
     Self {
       address: address as u32,
+      actual_address: address as u32,
       opcode,
       arg1: transmute_to_u16(0, &data),
       padding: data[2],
@@ -55,6 +58,7 @@ impl BasicOpcode4 {
     } = GenericBasicOpcode::<4>::new(address, input);
     Self {
       address: address as u32,
+      actual_address: address as u32,
       opcode,
       arg1: transmute_to_u16(0, &data),
       arg2: transmute_to_u16(2, &data),
@@ -72,6 +76,7 @@ impl BasicOpcode6 {
     } = GenericBasicOpcode::<6>::new(address, input);
     Self {
       address: address as u32,
+      actual_address: address as u32,
       opcode,
       arg1: transmute_to_u16(0, &data),
       arg2: transmute_to_u16(2, &data),
@@ -90,6 +95,7 @@ impl BasicOpcode8 {
     } = GenericBasicOpcode::<8>::new(address, input);
     Self {
       address: address as u32,
+      actual_address: address as u32,
       opcode,
       arg1: transmute_to_u16(0, &data),
       arg2: transmute_to_u16(2, &data),
@@ -109,6 +115,7 @@ impl BasicOpcode10 {
     } = GenericBasicOpcode::<10>::new(address, input);
     Self {
       address: address as u32,
+      actual_address: address as u32,
       opcode,
       arg1: transmute_to_u16(0, &data),
       arg2: transmute_to_u16(2, &data),
@@ -129,6 +136,7 @@ impl BasicOpcode12 {
     } = GenericBasicOpcode::<12>::new(address, input);
     Self {
       address: address as u32,
+      actual_address: address as u32,
       opcode,
       arg1: transmute_to_u16(0, &data),
       arg2: transmute_to_u16(2, &data),
@@ -150,6 +158,7 @@ impl BasicOpcode16 {
     } = GenericBasicOpcode::<16>::new(address, input);
     Self {
       address: address as u32,
+      actual_address: address as u32,
       opcode,
       arg1: transmute_to_u16(0, &data),
       arg2: transmute_to_u16(2, &data),
@@ -179,6 +188,7 @@ impl Op44Opcode {
     let arg2 = transmute_to_u16(address + 3, input);
     Op44Opcode {
       address: address as u32,
+      actual_address: address as u32,
       opcode: input[address],
       arg1: transmute_to_u16(address + 1, input),
       arg2,
@@ -206,6 +216,7 @@ impl SwitchOpcode {
     let count = transmute_to_u16(address + 1 + 2, input); // , = unpack("<H", data[start+3:start+5])
     Self {
       address: address as u32,
+      actual_address: address as u32,
       opcode: input[address],
       comparison_value: transmute_to_u16(address + 1, input),
       count,
@@ -224,6 +235,7 @@ impl StringOpcode {
     let (sjis_bytes, unicode) = get_sjis_bytes(address + 1 + 4, input);
     Self {
       address: address as u32,
+      actual_address: address as u32,
       opcode: input[address],
       header: transmute_to_array(address + 1, input),
       unicode,
@@ -240,6 +252,7 @@ impl String47Opcode {
     let (sjis_bytes, unicode) = get_sjis_bytes(address + 1 + string_offset, input);
     Self {
       address: address as u32,
+      actual_address: address as u32,
       opcode: input[address],
       arg1,
       opt_arg2: if arg1 == 0x000D {
@@ -290,6 +303,7 @@ impl JumpOpcode2 {
     } = GenericJumpOpcode::<2>::new(address, input);
     Self {
       address: address as u32,
+      actual_address: address as u32,
       opcode,
       arg1: transmute_to_u16(0, &header),
       jump_address,
@@ -308,6 +322,7 @@ impl JumpOpcode4 {
     } = GenericJumpOpcode::<4>::new(address, input);
     Self {
       address: address as u32,
+      actual_address: address as u32,
       opcode,
       arg1: transmute_to_u16(0, &header),
       arg2: transmute_to_u16(2, &header),
@@ -344,6 +359,7 @@ impl ChoiceOpcode {
 
     ChoiceOpcode {
       address: address as u32,
+      actual_address: address as u32,
       opcode: input[address],
       pre_header,
       n_choices,
@@ -358,6 +374,7 @@ impl DirectJumpOpcode {
   pub fn new(address: usize, input: &[u8]) -> Self {
     Self {
       address: address as u32,
+      actual_address: address as u32,
       opcode: input[address],
       jump_address: transmute_to_u32(address + 1, input),
     }
@@ -368,6 +385,7 @@ impl LongJumpOpcode {
   pub fn new(address: usize, input: &[u8]) -> Self {
     Self {
       address: address as u32,
+      actual_address: address as u32,
       opcode: input[address],
       target_script: transmute_to_u16(address + 1, input),
       jump_address: transmute_to_u16(address + 3, input),
@@ -523,5 +541,25 @@ impl Opcode {
         .flat_map(|op| op.binary_serialize())
         .collect()
     })
+  }
+
+  pub fn actual_address(&self) -> u32 {
+    crate::opcode_common_action!(self, op, { op.actual_address }, {
+      op.contents
+        .first()
+        .map(Opcode::actual_address)
+        .unwrap_or_default()
+    })
+  }
+
+  pub fn set_actual_address(&mut self, actual_address: usize) {
+    crate::opcode_common_action!(
+      self,
+      op,
+      {
+        op.actual_address = actual_address as u32;
+      },
+      { op.contents[0].set_actual_address(actual_address) }
+    )
   }
 }

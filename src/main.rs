@@ -51,7 +51,8 @@ where
 }
 
 fn main() {
-  env_logger::init();
+  env_logger::builder().format_timestamp(None).init();
+
   let mut app = clap::Command::new("yeti")
     .about("A tool to decode and re-encode scenario files for CROSS†CHANNEL final complete (for PC).")
     .arg_required_else_help(true)
@@ -156,7 +157,7 @@ fn main() {
 
       do_extract_command(data, &outfile);
     }
-    "extract" => {
+    "mk_uncompbin" => {
       let top_dir = file_list.first().expect(&help_text.ansi().to_string());
       do_archive_command(top_dir, outfile, false);
     }

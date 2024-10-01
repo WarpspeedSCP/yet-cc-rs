@@ -4,11 +4,7 @@ use serde_derive::*;
 use sizedop_derive::SizedOpcode;
 
 pub trait SizedOpcode {
-  const BASE_SIZE: usize;
-
-  fn size(&self) -> usize {
-    Self::BASE_SIZE + 1
-  }
+  fn size(&self) -> usize;
 }
 
 pub fn serialize_inline_ints_slice<S>(data: &[u8], serializer: S) -> Result<S::Ok, S::Error>
@@ -91,6 +87,8 @@ pub trait BinarySerialize {
 pub struct SingleByteOpcode {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
+  #[serde(skip)]
+  pub actual_address: u32,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u8")]
   pub opcode: u8,
 }
@@ -108,6 +106,8 @@ pub struct GenericBasicOpcode<const DATA_SIZE: usize> {
 pub struct BasicOpcode2 {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
+  #[serde(skip)]
+  pub actual_address: u32,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u8")]
   pub opcode: u8,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u16")]
@@ -119,6 +119,8 @@ pub struct BasicOpcode2 {
 pub struct BasicOpcode3 {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
+  #[serde(skip)]
+  pub actual_address: u32,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u8")]
   pub opcode: u8,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u16")]
@@ -131,6 +133,8 @@ pub struct BasicOpcode3 {
 pub struct BasicOpcode4 {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
+  #[serde(skip)]
+  pub actual_address: u32,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u8")]
   pub opcode: u8,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u16")]
@@ -143,6 +147,8 @@ pub struct BasicOpcode4 {
 pub struct BasicOpcode6 {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
+  #[serde(skip)]
+  pub actual_address: u32,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u8")]
   pub opcode: u8,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u16")]
@@ -157,6 +163,8 @@ pub struct BasicOpcode6 {
 pub struct BasicOpcode8 {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
+  #[serde(skip)]
+  pub actual_address: u32,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u8")]
   pub opcode: u8,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u16")]
@@ -173,6 +181,8 @@ pub struct BasicOpcode8 {
 pub struct BasicOpcode10 {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
+  #[serde(skip)]
+  pub actual_address: u32,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u8")]
   pub opcode: u8,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u16")]
@@ -191,6 +201,8 @@ pub struct BasicOpcode10 {
 pub struct BasicOpcode12 {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
+  #[serde(skip)]
+  pub actual_address: u32,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u8")]
   pub opcode: u8,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u16")]
@@ -211,6 +223,8 @@ pub struct BasicOpcode12 {
 pub struct BasicOpcode16 {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
+  #[serde(skip)]
+  pub actual_address: u32,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u8")]
   pub opcode: u8,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u16")]
@@ -235,6 +249,8 @@ pub struct BasicOpcode16 {
 pub struct Op44Opcode {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
+  #[serde(skip)]
+  pub actual_address: u32,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u8")]
   pub opcode: u8,
   // Voice type.
@@ -251,6 +267,8 @@ pub struct Op44Opcode {
 pub struct SwitchOpcode {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
+  #[serde(skip)]
+  pub actual_address: u32,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u8")]
   pub opcode: u8,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u16")]
@@ -269,10 +287,18 @@ pub struct SwitchArm {
   pub jump_address: u32,
 }
 
+impl SizedOpcode for SwitchArm {
+  fn size(&self) -> usize {
+    6
+  }
+}
+
 #[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize)]
 pub struct StringOpcode {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
+  #[serde(skip)]
+  pub actual_address: u32,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u8")]
   pub opcode: u8,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_inline_ints_slice")]
@@ -298,6 +324,8 @@ impl From<StringOpcode> for Opcode {
 pub struct String47Opcode {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
+  #[serde(skip)]
+  pub actual_address: u32,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u8")]
   pub opcode: u8,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u16")]
@@ -324,6 +352,8 @@ pub struct GenericJumpOpcode<const HEADER_SIZE: usize> {
 pub struct JumpOpcode2 {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
+  #[serde(skip)]
+  pub actual_address: u32,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u8")]
   pub opcode: u8,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u16")]
@@ -337,6 +367,8 @@ pub struct JumpOpcode2 {
 pub struct JumpOpcode4 {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
+  #[serde(skip)]
+  pub actual_address: u32,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u8")]
   pub opcode: u8,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u16")]
@@ -375,6 +407,8 @@ impl From<JumpOpcode4> for Opcode {
 pub struct LongJumpOpcode {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
+  #[serde(skip)]
+  pub actual_address: u32,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u8")]
   pub opcode: u8,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u16")]
@@ -387,6 +421,8 @@ pub struct LongJumpOpcode {
 pub struct DirectJumpOpcode {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
+  #[serde(skip)]
+  pub actual_address: u32,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u8")]
   pub opcode: u8,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
@@ -404,10 +440,19 @@ pub struct Choice {
   pub unicode: String,
 }
 
+impl SizedOpcode for Choice {
+  fn size(&self) -> usize {
+    use encoding_rs::SHIFT_JIS;
+    self.header.len() + SHIFT_JIS.encode(&self.unicode).0.len() + 1
+  }
+}
+
 #[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize)]
 pub struct ChoiceOpcode {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
+  #[serde(skip)]
+  pub actual_address: u32,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u8")]
   pub opcode: u8,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_inline_ints_slice")]
@@ -427,7 +472,6 @@ pub struct InsertOpcode {
 }
 
 impl SizedOpcode for InsertOpcode {
-  const BASE_SIZE: usize = 0;
   fn size(&self) -> usize {
     self.contents.iter().map(Opcode::size).sum()
   }
@@ -437,6 +481,8 @@ impl SizedOpcode for InsertOpcode {
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct Custom77 {
   pub address: u32,
+  #[serde(skip)]
+  pub actual_address: u32,
   pub opcode: u8,
   /// The tip level. 0 = No tips, 1 = Tips for obscure details, 2 = All tips.
   pub condition: u8,
@@ -446,22 +492,15 @@ pub struct Custom77 {
 
 impl BinarySerialize for Custom77 {
   fn binary_serialize(&self) -> Vec<u8> {
-      return vec![
-        self.opcode,
-        self.condition,
-        0,
-        0,
-      ]
+    return vec![self.opcode, self.condition, 0, 0];
   }
 }
 
 impl SizedOpcode for Custom77 {
-  const BASE_SIZE: usize = 4;
   fn size(&self) -> usize {
-    Self::BASE_SIZE
+    4
   }
 }
-
 
 pub type B2 = BasicOpcode2;
 pub type B3 = BasicOpcode3;
@@ -508,62 +547,62 @@ pub enum Opcode {
   OP_15(B4),
   OP_16(B4),
   OP_17(B4),
-  OP_1A(B4),         //: 5,
-  OP_1B(S),          // 1,
-  OP_1C(S),          //: 1,
-  OP_1D(B6),         //: 7,
-  OP_1E(B10),        // : 11,
-  OP_1F(B12),        // : 13,
-  OP_20(B6),         // : 7,
-  OP_21(B6),         // : 7,
-  OP_22(B4),         // : 5,
-  OP_23(B8),         // : 9,
-  OP_24(B6),         // : 7,
-  OP_25(B4),         // : 5,  // 26 to 2C are absent in final complete for desktop.
+  OP_1A(B4),  //: 5,
+  OP_1B(S),   // 1,
+  OP_1C(S),   //: 1,
+  OP_1D(B6),  //: 7,
+  OP_1E(B10), // : 11,
+  OP_1F(B12), // : 13,
+  OP_20(B6),  // : 7,
+  OP_21(B6),  // : 7,
+  OP_22(B4),  // : 5,
+  OP_23(B8),  // : 9,
+  OP_24(B6),  // : 7,
+  OP_25(B4),  // : 5,  // 26 to 2C are absent in final complete for desktop.
   // An opportunity to insert new code?
-  OP_2D(B4),         // : 5,
-  OP_2E(S),          // : 1,
-  OP_2F(B2),         // : 3,
-  OP_30(B10),        // : 11,
-  OP_31(C),          // : getlen_opcodes_31_32, # choice
-  OP_32(C),          // : getlen_opcodes_31_32,
-  OP_33(S),          // : 1,
-  OP_34(B10),        // : 11,
-  OP_36(B3),         // : 4,
-  OP_39(B4),         // : 5,
-  OP_3A(B4),         // : 5,
-  OP_3B(B2),         // : 3,
-  OP_3C(B2),         // : 3,
-  OP_42(B8),         // : 9,
-  OP_43(B4),         // : 5,
-  OP_44(Op44Opcode), // : getlen_opcode44 - voice?
-  OP_45(ST),         // : getlen_opcode_4_plus_sz, # text
-  OP_47(S47),        // : getlen_opcode_4_plus_sz, # charname
-  OP_48(B2),         // : 3,
-  OP_49(B4),         // : 5, - clear screen
-  OP_4A(B2),         // : 3, - Wait for user input
-  OP_4B(B4),         // : 5,
-  OP_4C(B6),         // : 7,
-  OP_4F(B4),         // : 5,
-  OP_51(B6),         // : 7,
-  OP_59(S),          // : 1,
-  OP_5A(S),          // : 1,
-  OP_5F(S),          // : 1,
-  OP_68(B10),        // : 11, // always comes in pairs. Start and end of something?
-  OP_69(B2),         // : 3,
-  OP_6A(B4),         // : 5, debug...
-  OP_6C(B16),        // : 17,
-  OP_6E(B4),         // : 5,
-  OP_6F(B6),         // : 7, unused
-  OP_71(B6),         // : 7. Skips the succeeding 5A if op 2 is not 0xFFFF.
-  OP_72(B4),         // : 5,
-  OP_74(B6),         // : 7,
-  OP_75(B4),         // : 5,
+  OP_2D(B4),                  // : 5,
+  OP_2E(S),                   // : 1,
+  OP_2F(B2),                  // : 3,
+  OP_30(B10),                 // : 11,
+  OP_31(C),                   // : getlen_opcodes_31_32, # choice
+  OP_32(C),                   // : getlen_opcodes_31_32,
+  OP_33(S),                   // : 1,
+  OP_34(B10),                 // : 11,
+  OP_36(B3),                  // : 4,
+  OP_39(B4),                  // : 5,
+  OP_3A(B4),                  // : 5,
+  OP_3B(B2),                  // : 3,
+  OP_3C(B2),                  // : 3,
+  OP_42(B8),                  // : 9,
+  OP_43(B4),                  // : 5,
+  OP_44(Op44Opcode),          // : getlen_opcode44 - voice?
+  OP_45(ST),                  // : getlen_opcode_4_plus_sz, # text
+  OP_47(S47),                 // : getlen_opcode_4_plus_sz, # charname
+  OP_48(B2),                  // : 3,
+  OP_49(B4),                  // : 5, - clear screen
+  OP_4A(B2),                  // : 3, - Wait for user input
+  OP_4B(B4),                  // : 5,
+  OP_4C(B6),                  // : 7,
+  OP_4F(B4),                  // : 5,
+  OP_51(B6),                  // : 7,
+  OP_59(S),                   // : 1,
+  OP_5A(S),                   // : 1,
+  OP_5F(S),                   // : 1,
+  OP_68(B10),                 // : 11, // always comes in pairs. Start and end of something?
+  OP_69(B2),                  // : 3,
+  OP_6A(B4),                  // : 5, debug...
+  OP_6C(B16),                 // : 17,
+  OP_6E(B4),                  // : 5,
+  OP_6F(B6),                  // : 7, unused
+  OP_71(B6),                  // : 7. Skips the succeeding 5A if op 2 is not 0xFFFF.
+  OP_72(B4),                  // : 5,
+  OP_74(B6),                  // : 7,
+  OP_75(B4),                  // : 5,
   OP_CUSTOM_TIP_77(Custom77), // Custom Tip opcode, see docs/opcodes for details.
-  OP_7B(B4),         // : 5,
-  OP_82(B2),         // : 3, -
-  OP_83(B4),         // : 5,
-  OP_85(ST),         // : getlen_opcode_4_plus_sz, # ? Debug string ?
-  OP_86(ST),         // : getlen_opcode_4_plus_sz, # Special text
+  OP_7B(B4),                  // : 5,
+  OP_82(B2),                  // : 3, -
+  OP_83(B4),                  // : 5,
+  OP_85(ST),                  // : getlen_opcode_4_plus_sz, # ? Debug string ?
+  OP_86(ST),                  // : getlen_opcode_4_plus_sz, # Special text
   OP_Insert(InsertOpcode),
 }
