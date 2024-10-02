@@ -16,20 +16,18 @@ pub fn do_archive_command(top_dir: &PathBuf, outfile: PathBuf, compress: bool) {
     serde_yml::from_str(&std::fs::read_to_string(&top_dir.join("directory.yaml")).unwrap())
       .unwrap();
 
-  let mut scripts: Vec<(String, Script)> = vec![];
-  for DirEntry { name, .. } in directory {
+  let scripts: Vec<(String, Script)> = directory.par_iter().map(|DirEntry { name, .. }| {
     let path = top_dir.join(name);
     log::debug!("Opening {}", path.display());
-    scripts.push((
+    (
       path.display().to_string(),
       serde_yml::from_slice(&std::fs::read(path).unwrap()).unwrap(),
-    ))
-  }
+    )
+  }).collect();
 
   let n_scripts = scripts.len();
 
-  let (_, directory, scripts_concat, scripts) = scripts
-    .into_iter()
+  let (_, directory, scripts_concat, scripts) = scripts.into_iter()
     .map(|(path, it)| {
       log::debug!("Serializing {path}.");
       let serialized = it.binary_serialize();

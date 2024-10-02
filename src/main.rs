@@ -14,11 +14,12 @@ use walkdir::WalkDir;
 
 fn get_final_file_list<T>(input_files: Vec<T>, recurse_dirs: bool, action: &str) -> Vec<PathBuf>
 where
-  T: AsRef<Path>,
+  T: AsRef<Path> + Sync + Send,
 {
+  use rayon::prelude::*;
   if !recurse_dirs {
     input_files
-      .into_iter()
+      .par_iter()
       .map(|it| it.as_ref().to_path_buf())
       .filter(|it| {
         if action == "decode" {
@@ -30,7 +31,7 @@ where
       .collect()
   } else {
     input_files
-      .into_iter()
+      .par_iter()
       .flat_map(|file| {
         WalkDir::new(file.as_ref())
           .contents_first(true)
@@ -44,7 +45,7 @@ where
             } else {
               false
             }
-          })
+          }).collect::<Vec<_>>()
       })
       .collect()
   }
