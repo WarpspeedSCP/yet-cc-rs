@@ -15,7 +15,7 @@ cd yet-cc-rs
 cargo install --path .
 ```
 
-Note that this will only work if the cargo install directory, usually `$HOME/.local/bin`, is in your `$PATH` env variable.
+Note that this will only work if the cargo install directory, usually `$HOME/.cargo/bin`, is in your `$PATH` env variable.
 
 You might need to modify your `.bashrc` or equivalent shell init script to get this to work. 
 
