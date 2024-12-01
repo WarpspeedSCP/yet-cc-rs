@@ -38,7 +38,7 @@ Then, you will be able to run the commands above using the Git Bash terminal.
 
 You can also use WSL for an easy experience.
 
-Some of the custom features included in this tool, such as the use of tips, require a modified cross channel binary. You can download that binary [here](https://mega.nz/folder/pglTVKyQ#uqVoRXCRS8Y8Vaxd0ktW7A).
+The custom features included in this tool, such as the use of tips, require a modified cross channel binary. That is to say, **If you run a modified script that uses custom tips with normal cross channel, the game will crash.** You can download that binary [here](https://mega.nz/folder/pglTVKyQ#uqVoRXCRS8Y8Vaxd0ktW7A).
 
 ### Examples
 
