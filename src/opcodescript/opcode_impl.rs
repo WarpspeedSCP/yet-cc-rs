@@ -393,6 +393,26 @@ impl LongJumpOpcode {
   }
 }
 
+impl Custom77 {
+  pub fn new(address: usize, input: &[u8]) -> Self {
+    let GenericBasicOpcode {
+      address,
+      opcode,
+      data,
+      ..
+    } = GenericBasicOpcode::<3>::new(address, input);
+
+    Self {
+      address: address as u32,
+      actual_address: address as u32,
+      opcode,
+      condition: data[0],
+      skip: 0,
+      skip_bytes: transmute_to_u16(1, &data),
+    }
+  }
+}
+
 impl Opcode {
   pub fn eat(address: usize, input: &[u8]) -> Result<Self, String> {
     match input[address] {
@@ -500,6 +520,7 @@ impl Opcode {
       0x72 => Ok(Self::OP_72(B4::new(address, input))), // (B<4>), // : 5,
       0x74 => Ok(Self::OP_74(B6::new(address, input))), // (B<6>), // : 7,
       0x75 => Ok(Self::OP_75(B4::new(address, input))), // (B<4>), // : 5,
+      0x77 => Ok(Self::OP_CUSTOM_TIP_77(Custom77::new(address, input))),
       0x7B => Ok(Self::OP_7B(B4::new(address, input))), // (B<4>), // : 5,
       0x82 => Ok(Self::OP_82(B2::new(address, input))), // (B<2>), // : 3, -
       0x83 => Ok(Self::OP_83(B4::new(address, input))), // (B<4>), // : 5,
@@ -562,4 +583,15 @@ impl Opcode {
       { op.contents[0].set_actual_address(actual_address) }
     )
   }
+}
+
+impl TryFrom<Opcode> for Custom77 {
+    type Error = &'static str;
+
+    fn try_from(value: Opcode) -> Result<Self, Self::Error> {
+        match value {
+          Opcode::OP_CUSTOM_TIP_77(value) => Ok(value),
+          _ => Err("Opcode was not a tip."),
+        }
+    }
 }

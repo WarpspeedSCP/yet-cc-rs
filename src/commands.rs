@@ -16,18 +16,22 @@ pub fn do_archive_command(top_dir: &PathBuf, outfile: PathBuf, compress: bool) {
     serde_yml::from_str(&std::fs::read_to_string(&top_dir.join("directory.yaml")).unwrap())
       .unwrap();
 
-  let scripts: Vec<(String, Script)> = directory.par_iter().map(|DirEntry { name, .. }| {
-    let path = top_dir.join(name);
-    log::debug!("Opening {}", path.display());
-    (
-      path.display().to_string(),
-      serde_yml::from_slice(&std::fs::read(path).unwrap()).unwrap(),
-    )
-  }).collect();
+  let scripts: Vec<(String, Script)> = directory
+    .par_iter()
+    .map(|DirEntry { name, .. }| {
+      let path = top_dir.join(name);
+      log::debug!("Opening {}", path.display());
+      (
+        path.display().to_string(),
+        serde_yml::from_slice(&std::fs::read(path).unwrap()).unwrap(),
+      )
+    })
+    .collect();
 
   let n_scripts = scripts.len();
 
-  let (_, directory, scripts_concat, scripts) = scripts.into_iter()
+  let (_, directory, scripts_concat, scripts) = scripts
+    .into_iter()
     .map(|(path, it)| {
       log::debug!("Serializing {path}.");
       let serialized = it.binary_serialize();
@@ -128,7 +132,7 @@ pub fn do_reencode_command(outfile: &Path, filename: &Path) {
 
 pub fn do_decode_command(outfile: &Path, filename: &Path) {
   let script = decode_opcodescript(filename);
-  let outfile = if !outfile.ends_with(".yaml") {
+  let outfile = if outfile.extension().unwrap().to_string_lossy() != "yaml" {
     if !outfile.exists() {
       std::fs::create_dir_all(outfile)
         .expect(&format!("Could not create directory {}", outfile.display()));
@@ -138,7 +142,16 @@ pub fn do_decode_command(outfile: &Path, filename: &Path) {
     outfile.to_owned()
   };
   log::info!("writing output to {}", outfile.display());
-  std::fs::write(outfile, serde_yml::to_string(&script).unwrap()).unwrap();
+  std::fs::write(
+    outfile,
+    serde_yml::to_string(&script)
+      .unwrap()
+      .replace("'[", "[")
+      .replace("]'", "]")
+      .replace(r#"'""#, "")
+      .replace(r#""'"#, ""),
+  )
+  .unwrap();
 }
 
 fn decode_opcodescript(filename: &Path) -> Script {

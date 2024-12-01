@@ -52,7 +52,10 @@ where
 }
 
 fn main() {
-  env_logger::builder().format_timestamp(None).init();
+  env_logger::builder()
+    .format_timestamp(None)
+    .filter_level(log::LevelFilter::Info)
+    .init();
 
   let mut app = clap::Command::new("yeti")
     .about("A tool to decode and re-encode scenario files for CROSS†CHANNEL final complete (for PC).")

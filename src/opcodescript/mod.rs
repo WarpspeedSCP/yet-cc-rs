@@ -2,9 +2,9 @@
 //! Changes are mostly to make things more explicit,
 //! and to add functionality such as converting from and to opcodescript files easily.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
-use opcodes::{BinarySerialize, InsertOpcode};
+use opcodes::{BinarySerialize, Custom77, InsertOpcode};
 use rayon::prelude::{IndexedParallelIterator, IntoParallelRefIterator};
 use serde::{Deserialize, Serialize};
 
@@ -44,9 +44,13 @@ impl Script {
 
     let mut opcodes = Vec::new();
 
-    let mut _idx = 0;
+    let mut idx = 0;
     let mut at_end = false;
     let mut encountered_error: Option<String> = None;
+
+    let mut skip_stack: Vec<(Custom77, usize)> = vec![];
+    let mut marked_indices = HashSet::new();
+
     while address < data.len() {
       match Opcode::eat(address, &data) {
         Ok(opcode) => {
@@ -56,8 +60,45 @@ impl Script {
           }
 
           address += opcode.size();
+
+          if opcode.opcode() == 0x77 {
+            let mut op: Custom77 = opcode.clone().try_into().unwrap();
+            op.skip_bytes -= 3;
+            skip_stack.push((op, idx));
+          }
+
+          idx += 1;
+
+          if !skip_stack.is_empty() {
+            let size = opcode.size();
+
+            for (op, this_idx) in skip_stack.iter_mut() {
+              if op.skip_bytes.checked_sub(size as u16).map_or(false, |_| true) {
+                op.skip += 1;
+                op.skip_bytes -= size as u16
+              } else {
+                marked_indices.insert(*this_idx);
+              }
+            }
+
+            for i in marked_indices.drain() {
+              let thing = skip_stack
+                .iter()
+                .find(|it| it.1 == i)
+                .map(|(a, b)| (a.clone(), *b)).unwrap();
+              
+                match opcodes.get_mut(thing.1).unwrap() {
+                  Opcode::OP_CUSTOM_TIP_77(opcode) => {
+                    opcode.skip = thing.0.skip;
+                  }
+                  _ => {}
+                }
+              
+              skip_stack.retain(|it| it.1 != i);
+            }
+          }
+          
           opcodes.push(opcode);
-          _idx += 1;
 
           if at_end {
             break;
@@ -276,10 +317,15 @@ mod tests {
 
   #[test]
   fn test_thing() {
-    let thing = include_str!("../../sn.bin.output/0000.yaml");
+    let thing = include_bytes!("../../0046.opcodescript");
 
-    let res: Script = serde_yml::from_str(thing).unwrap();
+    let res = Script::new(thing);
 
-    res.binary_serialize();
+    std::fs::write("0046.yaml", serde_yml::to_string(&res).unwrap()
+        .replace("'[", "[")
+        .replace("]'", "]")
+        .replace(r#"'""#, "")
+        .replace(r#""'"#, ""),
+    ).unwrap();
   }
 }

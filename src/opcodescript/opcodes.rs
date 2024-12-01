@@ -476,7 +476,6 @@ impl SizedOpcode for InsertOpcode {
   }
 }
 
-/// Avoid serializing this opcode.
 /// This opcode is essentially a hardcoded conditional that only checks for whether a particular
 /// flag has values below a certain level.
 ///
@@ -494,12 +493,15 @@ pub struct Custom77 {
   pub address: u32,
   #[serde(skip)]
   pub actual_address: u32,
+  #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u8")]
   pub opcode: u8,
   /// The tip level. 0 = The tip will always be on, 1 = Tips for obscure details, 2 = All tips.
   /// To disable this tip, set to a value greater than 2.
   pub condition: u8,
   /// The number of succeeding opcodes to skip if tips are disabled.
   pub skip: u16,
+  #[serde(skip)]
+  pub skip_bytes: u16,
 }
 
 impl BinarySerialize for Custom77 {

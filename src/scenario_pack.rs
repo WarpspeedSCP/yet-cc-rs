@@ -25,8 +25,13 @@ pub fn parse_scenario(input: &[u8]) -> BTreeMap<DirEntry, Script> {
     let entry_size = transmute_to_u32(offset + 4, input) as usize;
     log::debug!("Parsing script {entry_id:04}");
     let (script, error) = Script::new(&input[entry_offset..entry_offset + entry_size]);
+    
     if let Some(error) = error {
-      log::error!("Encountered an error ({error}) while decoding entry at offset 0x{entry_offset:08X} of size 0x{entry_size:08X}", );
+      if entry_id == 352 {
+        log::info!("Script 352 didn't parse correctly; this is expected.");
+      } else {
+        log::error!("Encountered an error ({error}) while decoding entry {entry_id:04}.yaml of size 0x{entry_size:08X}", );
+      }
     }
     scripts.insert(
       DirEntry {
@@ -39,6 +44,8 @@ pub fn parse_scenario(input: &[u8]) -> BTreeMap<DirEntry, Script> {
     offset += 16;
     entry_id += 1;
   }
+
+  log::info!("Parsed {entry_id} scripts in scenario.");
 
   scripts
 }
