@@ -1,5 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
+use syn::{Data, DataStruct};
 
 #[proc_macro_derive(SizedOpcode)]
 pub fn sized_opcode_derive(input: TokenStream) -> TokenStream {
@@ -11,51 +12,98 @@ pub fn sized_opcode_derive(input: TokenStream) -> TokenStream {
   impl_sized_opcode_macro(&ast)
 }
 
-fn impl_sized_opcode_macro(ast: &syn::DeriveInput) -> TokenStream {
-  let name = &ast.ident;
-  let name_int = name
-    .to_string()
-    .replace(|ch: char| !ch.is_digit(10), "")
-    .parse::<usize>()
-    .unwrap_or_default();
-  let name_str = name.to_string();
-  let mut chars = name_str.chars();
-  let first_char = chars.next().unwrap();
-  let second_char = chars.next().unwrap();
+fn gen_size_opcode_impl(struct_name: &str, data: &DataStruct) -> Vec<proc_macro2::TokenStream> {
+  let mut quotes = vec![];
+  for field in &data.fields {
+    let field_name = field.ident.as_ref().unwrap();
+    let field_name_str = field_name.to_string();
 
-  let name_int = match first_char {
-    'J' => name_int + 4,
-    'S' => {
-      if second_char == 'i' {
-        0 // Single byte opcode.
-      } else {
-        4
+    match field_name_str.as_str() {
+      "opcode" | "n_choices" | "padding" => {
+        quotes.push(quote! {
+          size += 1; // #field_name_str
+        });
       }
-    }
-    'C' => 6,
-    'L' => 4, // long jump
-    'D' => 4, // direct jump
-    _ => name_int,
-  };
-
-  let size_fn =
-    if (first_char == 'S' && second_char != 'i') || first_char == 'O' || first_char == 'C' {
-      quote! {
-        fn size(&self) -> usize {
-          self.size
+      "opt_arg2" => {
+        quotes.push(quote! {
+          if let Some(value) = self.#field_name {
+            size += 2; // #field_name_str
+          }
+        });
+      }
+      "arg1" | "arg2" | "arg3" | "arg4" | "arg5" | "arg6" | "arg7" | "arg8" |
+      "target_script" | "comparison_value" | "count" => {
+        quotes.push(quote! {
+          size += 2; // #field_name_str
+        });
+      }
+      "jump_address" => {
+        quotes.push(quote! {
+          size += 2; // #field_name_str
+        });
+        if struct_name != "LongJumpOpcode" {
+          quotes.push(quote! {
+            size += 2; // #field_name_str
+          });
         }
       }
-    } else {
-      // A custom size function will be required in this case.
-      quote! {}
-    };
-
-  let gen = quote! {
-      impl SizedOpcode for #name {
-          const BASE_SIZE: usize = #name_int;
-
-          #size_fn
+      "padding_end" => {
+        quotes.push(quote! {
+          if let Some(value) = self.#field_name {
+            size += 1; // #field_name_str
+          }
+        });
       }
+      "arms" => {
+        quotes.push(quote! {
+          for arm in &self.arms {
+            size += arm.size();
+          }
+        });
+      }
+      "pre_header" | "header" => {
+        quotes.push(quote! {
+          size += self.#field_name.len(); // #field_name_str
+        });
+      }
+      "choices" => {
+        quotes.push(quote! {
+          for choice in &self.choices {
+            size += choice.size();
+          }
+        });
+      }
+      "unicode" => quotes.push(quote! {
+        {
+          use encoding_rs::SHIFT_JIS;
+          size += SHIFT_JIS.encode(&self.unicode).0.len() + 1;
+        }
+      }),
+      _ => {}
+    }
+  }
+  quotes
+}
+
+fn impl_sized_opcode_macro(ast: &syn::DeriveInput) -> TokenStream {
+  let name = &ast.ident;
+  let name_str = name.to_string();
+
+  let quotes = match &ast.data {
+    Data::Struct(opcode_struct) => gen_size_opcode_impl(&name_str, &opcode_struct),
+    _ => panic!("{name_str} is not an opcode struct!"),
   };
-  gen.into()
+
+  quote! {
+    impl SizedOpcode for #name {
+      fn size(&self) -> usize {
+        let mut size = 0;
+
+        #(#quotes)*
+
+        size
+      }
+    }
+  }
+  .into()
 }
