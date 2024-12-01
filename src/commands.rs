@@ -105,17 +105,21 @@ pub fn do_extract_command(data: Vec<u8>, outfile: &PathBuf) {
     .for_each(|(DirEntry { name, .. }, script)| {
       let res = std::fs::write(
         &outfile.join(&name).with_extension("yaml"),
-        serde_yml::to_string(&script)
-          .unwrap()
-          .replace("'[", "[")
-          .replace("]'", "]")
-          .replace(r#"'""#, "")
-          .replace(r#""'"#, ""),
+        script2yaml(script),
       );
       if let Err(e) = res {
         log::error!("Encountered an error when writing {name}: {}", e);
       }
     });
+}
+
+fn script2yaml(script: &Script) -> String {
+    serde_yml::to_string(&script)
+      .unwrap()
+      .replace("'[", "[")
+      .replace("]'", "]")
+      .replace(r#"'""#, "")
+      .replace(r#""'"#, "")
 }
 
 pub fn do_reencode_command(outfile: &Path, filename: &Path) {
@@ -144,12 +148,7 @@ pub fn do_decode_command(outfile: &Path, filename: &Path) {
   log::info!("writing output to {}", outfile.display());
   std::fs::write(
     outfile,
-    serde_yml::to_string(&script)
-      .unwrap()
-      .replace("'[", "[")
-      .replace("]'", "]")
-      .replace(r#"'""#, "")
-      .replace(r#""'"#, ""),
+    script2yaml(&script),
   )
   .unwrap();
 }
