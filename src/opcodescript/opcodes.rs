@@ -544,8 +544,8 @@ pub enum Opcode {
   OP_03(B4),
   OP_04(B4),
   OP_SCRIPT_RETURN(S), // Seems like 1 byte is the only valid size; script end/return?
-  JNE(J4),  // je
-  JE(J4),   // jne
+  JE(J4),  // je
+  JNE(J4),   // jne
   JG(J4),
   JGE(J4),
   JL(J4),

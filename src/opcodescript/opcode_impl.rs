@@ -426,15 +426,15 @@ impl Opcode {
 
       0x05 => Ok(Self::OP_SCRIPT_RETURN(S::new(address, input))), // Seems like 1 byte is the only valid size; script end/return?
 
-      0x06 => Ok(Self::JNE(J4::new(address, input))), // (J<4>), // jne
-      0x07 => Ok(Self::JE(J4::new(address, input))),  // (J<4>), // je
-      0x08 => Ok(Self::JLE(J4::new(address, input))), // (J<4>), // jle
-      0x09 => Ok(Self::JL(J4::new(address, input))),  // (J<4>), // jl
-      0x0A => Ok(Self::JGE(J4::new(address, input))), // (J<4>), // jge
-      0x0B => Ok(Self::JG(J4::new(address, input))),  // (J<4>), // jg
+      0x06 => Ok(Self::JE(J4::new(address, input))), // (J<4>), // je
+      0x07 => Ok(Self::JNE(J4::new(address, input))),  // (J<4>), // jne
+      0x08 => Ok(Self::JG(J4::new(address, input))), // (J<4>), // jg
+      0x09 => Ok(Self::JGE(J4::new(address, input))),  // (J<4>), // jge
+      0x0A => Ok(Self::JL(J4::new(address, input))), // (J<4>), // jl
+      0x0B => Ok(Self::JLE(J4::new(address, input))),  // (J<4>), // jle
 
-      0x0C => Ok(Self::JNZ(J2::new(address, input))), // (J<6>), // jnz
-      0x0D => Ok(Self::JZ(J2::new(address, input))),  // (J<6>), // jz
+      0x0C => Ok(Self::JZ(J2::new(address, input))), // (J<6>), // jz
+      0x0D => Ok(Self::JNZ(J2::new(address, input))),  // (J<6>), // jnz
       0x0E => Ok(Self::Switch(SS::new(address, input))), // (SS),   // switch
 
       0x10 => Ok(Self::OP_10(B4::new(address, input))), // (B<4>),
