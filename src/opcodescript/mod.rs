@@ -103,7 +103,7 @@ impl Script {
 
     for opcode in opcodes.iter_mut() {
       match opcode {
-        Opcode::OP_01(op) => {
+        Opcode::OP_DIRECT_JUMP(op) => {
           let mut map = HashMap::new();
           map.insert(
             0,
@@ -224,10 +224,10 @@ fn adjust_single_opcode(
   opcodes: &[Opcode],
 ) -> Option<Opcode> {
   let opcode = match opcode {
-    Opcode::OP_01(mut op) => {
+    Opcode::OP_DIRECT_JUMP(mut op) => {
       let tbl_entry = &jump_table[&op.address];
       op.jump_address = opcodes[tbl_entry[&0]].actual_address();
-      Opcode::OP_01(op)
+      Opcode::OP_DIRECT_JUMP(op)
     }
 
     Opcode::JNE(mut op)

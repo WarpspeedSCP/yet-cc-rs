@@ -15,6 +15,12 @@ cd yet-cc-rs
 cargo install --path .
 ```
 
+Note that this will only work if the cargo install directory, usually `$HOME/.local/bin`, is in your `$PATH` env variable.
+
+You might need to modify your `.bashrc` or equivalent shell init script to get this to work. 
+
+I don't know enough about how Windows does things, so if it comes to that, consider putting the compiled `yeti.exe` file (located at `target\\release\\yeti.exe`) somewhere accessible, or edit the path to point there (Check this post out: https://stackoverflow.com/questions/4822400/register-an-exe-so-you-can-run-it-from-any-command-line-in-windows).
+
 If you only want to build the tool without installing it, use the command below instead of the last line above:
 
 ```bash
@@ -47,12 +53,12 @@ This will decompress, extract and disassemble all scripts from the scenario file
 - **To recreate a scenario file:**
 
 ```bash
-./target/release/yeti recomp --input <output/directory>  --output <new/sn.bin.filename> 
+./target/release/yeti recomp --input <input/directory>  --output <new/sn.bin.filename> 
 ```
 
-This will take all the scripts in a directory, and assemble, combine and recompress them to create a new scenario file, then put that file where you specify in `<new/sn.bin.filename>`.
+This will take all the scripts in the input directory, assemble, combine and recompress them to create a new scenario file, then put that file where you specify in `<new/sn.bin.filename>`.
 
-- **To fix strings in a yaml script:**
+- **To check/fix strings in a yaml script:**
 
 ```bash
 ./target/release/yeti fix --input <a/script/file.yaml> --output <fixed/script/file.yaml>
@@ -60,7 +66,82 @@ This will take all the scripts in a directory, and assemble, combine and recompr
 
 This will read the input script file (say, from where you extracted the script) and output a version with corrected spacing. This is useful when lines don't look right onscreen, or to check if you need to split text across multiple text boxes.
 
-### About the custom tip opcode
+If you only need to check if you need to split a line across multiple textboxes, don't specify the output parameter. 
+
+## FAQ
+
+### How do I insert new lines into the script?
+
+You use something called `OP_Insert` for this.
+
+This is what it looks like in yaml, generally:
+
+```yaml
+...
+- !OP_Insert
+  contents:
+    - !Instr1
+      ...
+    - !Instr2
+      ...
+    ...
+...
+```
+
+Here's an example usage:
+
+```yaml
+- !OP_TEXTBOX_DISPLAY
+  address: 0x00000FC7
+  opcode: 0x45
+  header: [ 0xFF, 0xFF, 0x2C, 0x00 ]
+  sjis_bytes: [ ... ] # Don't change anything here.
+  size: 118
+  unicode: Sakuraba's family was the exact opposite, and were quite%Ngentle in comparison. His father was a decorated veteran # 桜庭一族は正反対におっとりとした一族で、父親は盲腸の痛みに気づかず死の一歩手前まで旅だったという武勲の持ち主だ。
+- !OP_Insert
+  contents:
+  - !OP_WAIT
+    address: 0x000005CF
+    opcode: 0x4A
+    arg1: 0xFFFF
+  - !OP_CLEAR_SCREEN
+    address: 0x000005D7
+    opcode: 0x49
+    arg1: 0xFFFF
+    arg2: 0xFFFF
+  - !OP_TEXTBOX_DISPLAY
+    address: 0x000004CD
+    opcode: 0x45
+    header: [ 0xFF, 0xFF, 0x2C, 0x00 ]
+    sjis_bytes: []
+    size: 0
+    unicode: who'd very narrowly skirted death setting out as he did,%Nmindless of even the pain of an infected appendix. # 桜庭一族は正反対におっとりとした一族で、父親は盲腸の痛みに気づかず死の一歩手前まで旅だったという武勲の持ち主だ。
+- !OP_WAIT
+  address: 0x0000103D
+  opcode: 0x4A
+  arg1: 0xFFFF
+```
+
+Here are a few things to keep in mind when inserting opcodes:
+
+1. Make sure your text isn't longer than 180 characters per textbox. The `yeti fix` command can be used to check if your line exceeds that number.
+2. Any text instructions that are within an insert structure should have their `sjis_bytes` and `size` fields set to `[]` and `0` respectively. Not doing so will give you some annoying problems.
+
+### How do I insert a new line into whatever I write in a text opcode?
+
+Use `%N` to add a line break in the text.
+
+```yaml
+  - !OP_TEXTBOX_DISPLAY
+    address: 0x000004CD
+    opcode: 0x45
+    header: [ 0xFF, 0xFF, 0x14, 0x00 ]
+    sjis_bytes: []
+    size: 0
+    unicode: A%NB%NC # This will show up as A, B and C on 3 separate lines.
+```
+
+### How do I use the custom tip opcode?
 
 The modified CC binary has support for custom tips. This allows the game to display translation notes inserted into the script, based on whether a file called either `ALL_TIPS.txt` or `OTAKU_TIPS.txt` is present in the same folder as `cce.exe`.
 
@@ -68,7 +149,7 @@ Here's how this opcode will look in use, with some added context around the use 
 
 ```yaml
   # The previous text box contents will be in this instruction. 
-- !OP_45                    
+- !OP_TEXTBOX_DISPLAY                    
   address: 0x000007C9
   opcode: 0x45
   header: [ 0xFF, 0xFF, 0x14, 0x00 ]
@@ -76,11 +157,10 @@ Here's how this opcode will look in use, with some added context around the use 
   size: 30
   unicode: A "bed town", essentially. # 要するにベッドタウンだ。
   # This opcode waits for user input, such as a tap of the enter button, or the mouse.
-- !OP_4A
+- !OP_WAIT
   address: 0x000007E7
   opcode: 0x4A
   arg1: 0xFFFF
-  # you need to use this OP_Insert structure when adding bits into the script.
 - !OP_Insert
   contents:
   - !OP_CUSTOM_TIP_77
@@ -92,11 +172,11 @@ Here's how this opcode will look in use, with some added context around the use 
     # If you want to disable this tip, set to 3 or above.
     condition: 1            # In this example, this is a relatively unknown tip.
     # This number indicates how many instructions need to be skipped to not read out the tip. 
-    # It should usually coincide with the number of instructions within the 
-    # OP_Insert block unless you are inserting more than just this one tip. 
+    # To display this tip, the game needs to run 4 instructions after the custom tip instruction.
+    # So, you write 4 here.
     skip: 4
     # This opcode is used to clear the textbox.
-  - !OP_49                  
+  - !OP_CLEAR_SCREEN                  
     address: 0x000005D7
     opcode: 0x49
     arg1: 0xFFFF
@@ -108,8 +188,7 @@ Here's how this opcode will look in use, with some added context around the use 
     arg1: 0x000D
     arg2: 0x0000
     # This is the opcode that actually displays text.
-    # You don't need to touch the header, size or sjis_bytes bits.
-  - !OP_45
+  - !OP_TEXTBOX_DISPLAY
     address: 0x000004CD
     opcode: 0x45
     header: [ 0xFF, 0xFF, 0x14, 0x00 ]
@@ -117,7 +196,7 @@ Here's how this opcode will look in use, with some added context around the use 
     size: 0
     unicode: Tip - A bed town, or commuter town, is a town where there%Nare few or no businesses, just houses. People only come to%Nsuch towns to sleep or retire.
     # Always make sure there's a 4A instruction at the end, or the game will just skip the added text.
-  - !OP_4A
+  - !OP_WAIT
     address: 0x00000577
     opcode: 0x4A
     arg1: 0xFFFF
@@ -129,7 +208,7 @@ Here's how this opcode will look in use, with some added context around the use 
   opcode: 0x6A
   arg1: 0xFFFF
   arg2: 0xFFFF
-- !OP_49
+- !OP_CLEAR_SCREEN
   address: 0x000007EF
   opcode: 0x49
   arg1: 0xFFFF

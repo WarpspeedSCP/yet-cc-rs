@@ -397,14 +397,14 @@ impl Opcode {
   pub fn eat(address: usize, input: &[u8]) -> Result<Self, String> {
     match input[address] {
       // Complete each switch case with the correct variant of Opcode based on the members of opcode.
-      0x00 => Ok(Self::OP_00(S::new(address, input))), // (S),    // reset?
+      0x00 => Ok(Self::OP_RESET(S::new(address, input))), // (S),    // reset?
 
-      0x01 => Ok(Self::OP_01(D::new(address, input))), // (B<4>), // unconditional jump
-      0x02 => Ok(Self::OP_02(L::new(address, input))), // (B<4>), // jump to script in index
+      0x01 => Ok(Self::OP_DIRECT_JUMP(D::new(address, input))), // (B<4>), // unconditional jump
+      0x02 => Ok(Self::OP_JUMP_TO_SCRIPT(L::new(address, input))), // (B<4>), // jump to script in index
       0x03 => Ok(Self::OP_03(B4::new(address, input))), // (B<4>),
       0x04 => Ok(Self::OP_04(B4::new(address, input))), // (B<4>),
 
-      0x05 => Ok(Self::OP_05(S::new(address, input))), // Seems like 1 byte is the only valid size; script end/return?
+      0x05 => Ok(Self::OP_SCRIPT_RETURN(S::new(address, input))), // Seems like 1 byte is the only valid size; script end/return?
 
       0x06 => Ok(Self::JNE(J4::new(address, input))), // (J<4>), // jne
       0x07 => Ok(Self::JE(J4::new(address, input))),  // (J<4>), // je
@@ -454,8 +454,8 @@ impl Opcode {
 
       0x30 => Ok(Self::OP_30(B10::new(address, input))), // (B<10>), // : 11,
 
-      0x31 => Ok(Self::OP_31(C::new(address, input))), // (C),     // : getlen_opcodes_31_32, # choice
-      0x32 => Ok(Self::OP_32(C::new(address, input))), // (C),     // : getlen_opcodes_31_32,
+      0x31 => Ok(Self::OP_CHOICE(C::new(address, input))), // (C),     // : getlen_opcodes_31_32, # choice
+      0x32 => Ok(Self::OP_MENU_CHOICE(C::new(address, input))), // (C),     // : getlen_opcodes_31_32,
 
       0x33 => Ok(Self::OP_33(S::new(address, input))),
 
@@ -473,14 +473,14 @@ impl Opcode {
 
       0x43 => Ok(Self::OP_43(B4::new(address, input))), // (B<4>), // : 5,
 
-      0x44 => Ok(Self::OP_44(Op44Opcode::new(address, input))), // (Op44Opcode),     // : getlen_opcode44,
+      0x44 => Ok(Self::OP_PLAY_VOICE(Op44Opcode::new(address, input))), // (Op44Opcode),     // : getlen_opcode44,
 
-      0x45 => Ok(Self::OP_45(ST::new(address, input))), // (ST),     // : getlen_opcode_4_plus_sz, # text
-      0x47 => Ok(Self::OP_47(S47::new(address, input))), // (ST),     // : getlen_opcode_4_plus_sz, # charname
+      0x45 => Ok(Self::OP_TEXTBOX_DISPLAY(ST::new(address, input))), // (ST),     // : getlen_opcode_4_plus_sz, # text
+      0x47 => Ok(Self::OP_TEXTBOX_CHARNAME(S47::new(address, input))), // (ST),     // : getlen_opcode_4_plus_sz, # charname
 
       0x48 => Ok(Self::OP_48(B2::new(address, input))), // (B<2>),     // : 3,
-      0x49 => Ok(Self::OP_49(B4::new(address, input))), // (B<4>),     // : 5,
-      0x4A => Ok(Self::OP_4A(B2::new(address, input))), // (B<2>),     // : 3,
+      0x49 => Ok(Self::OP_CLEAR_SCREEN(B4::new(address, input))), // (B<4>),     // : 5,
+      0x4A => Ok(Self::OP_WAIT(B2::new(address, input))), // (B<2>),     // : 3,
       0x4B => Ok(Self::OP_4B(B4::new(address, input))), // (B<4>),     // : 5,
       0x4C => Ok(Self::OP_4C(B6::new(address, input))), // (B<6>),     // : 7,
       0x4F => Ok(Self::OP_4F(B4::new(address, input))), // (B<4>),     // : 5,
@@ -504,8 +504,8 @@ impl Opcode {
       0x82 => Ok(Self::OP_82(B2::new(address, input))), // (B<2>), // : 3, -
       0x83 => Ok(Self::OP_83(B4::new(address, input))), // (B<4>), // : 5,
 
-      0x85 => Ok(Self::OP_85(ST::new(address, input))), // (ST), // : getlen_opcode_4_plus_sz, # ? Debug string ?
-      0x86 => Ok(Self::OP_86(ST::new(address, input))), // (ST), // : getlen_opcode_4_plus_sz, # Special text
+      0x85 => Ok(Self::OP_DEBUG_PRINT(ST::new(address, input))), // (ST), // : getlen_opcode_4_plus_sz, # ? Debug string ?
+      0x86 => Ok(Self::OP_SPECIAL_TEXT(ST::new(address, input))), // (ST), // : getlen_opcode_4_plus_sz, # Special text
 
       _ => Err(format!(
         "Opcode {:02X} not recognised at address 0x{:08X}.",

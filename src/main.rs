@@ -129,7 +129,10 @@ fn main() {
   let outfile: PathBuf = matches
     .get_one("output")
     .map(|it: &String| PathBuf::from(it))
-    .expect("Expected a valid output directory");
+    .or_else(|| {
+      Some(std::env::temp_dir())
+    })
+    .expect("Expected a valid output file");
 
   if in_dir && outfile.is_file() {
     eprintln!("Expected a directory for --output, got a file path.");

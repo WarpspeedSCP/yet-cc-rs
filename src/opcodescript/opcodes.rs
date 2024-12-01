@@ -312,9 +312,9 @@ pub struct StringOpcode {
 impl From<StringOpcode> for Opcode {
   fn from(value: StringOpcode) -> Self {
     match value.opcode {
-      0x45 => Opcode::OP_45(value),
-      0x85 => Opcode::OP_85(value),
-      0x86 => Opcode::OP_86(value),
+      0x45 => Opcode::OP_TEXTBOX_DISPLAY(value),
+      0x85 => Opcode::OP_DEBUG_PRINT(value),
+      0x86 => Opcode::OP_SPECIAL_TEXT(value),
       _ => unreachable!(),
     }
   }
@@ -411,7 +411,6 @@ pub struct LongJumpOpcode {
   pub actual_address: u32,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u8")]
   pub opcode: u8,
-  #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u16")]
   pub target_script: u16,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u16")]
   pub jump_address: u16,
@@ -478,6 +477,18 @@ impl SizedOpcode for InsertOpcode {
 }
 
 /// Avoid serializing this opcode.
+/// This opcode is essentially a hardcoded conditional that only checks for whether a particular
+/// flag has values below a certain level.
+///
+/// If the condition evaluates to false, the first `skip` opcodes that occur after this opcode will
+/// be skipped, and execution will resume from the `pc + [skip] + 1`'th opcode.
+///
+/// Otherwise, execution will continue from the first opcode immediately after this one.
+///
+/// Here's how:
+/// 1. Find where you want to add new opcodes.
+/// 2. Insert the opcodes you need to add using the OP_Insert structure.
+/// 3. add this opcode in front, specifying how many opcodes after this one to skip, as well as the condition level.
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct Custom77 {
   pub address: u32,
@@ -525,12 +536,12 @@ pub type C = ChoiceOpcode;
 #[allow(non_camel_case_types)]
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub enum Opcode {
-  OP_00(S), // reset?
-  OP_01(D), // unconditional jump
-  OP_02(L), // jump to script in index
+  OP_RESET(S), // reset?
+  OP_DIRECT_JUMP(D), // unconditional jump
+  OP_JUMP_TO_SCRIPT(L), // jump to script in index
   OP_03(B4),
   OP_04(B4),
-  OP_05(S), // Seems like 1 byte is the only valid size; script end/return?
+  OP_SCRIPT_RETURN(S), // Seems like 1 byte is the only valid size; script end/return?
   JNE(J4),  // jne
   JE(J4),   // je
   JLE(J4),
@@ -565,8 +576,8 @@ pub enum Opcode {
   OP_2E(S),                   // : 1,
   OP_2F(B2),                  // : 3,
   OP_30(B10),                 // : 11,
-  OP_31(C),                   // : getlen_opcodes_31_32, # choice
-  OP_32(C),                   // : getlen_opcodes_31_32,
+  OP_CHOICE(C),               // : getlen_opcodes_31_32, # choice
+  OP_MENU_CHOICE(C),             // : getlen_opcodes_31_32,
   OP_33(S),                   // : 1,
   OP_34(B10),                 // : 11,
   OP_36(B3),                  // : 4,
@@ -576,12 +587,12 @@ pub enum Opcode {
   OP_3C(B2),                  // : 3,
   OP_42(B8),                  // : 9,
   OP_43(B4),                  // : 5,
-  OP_44(Op44Opcode),          // : getlen_opcode44 - voice?
-  OP_45(ST),                  // : getlen_opcode_4_plus_sz, # text
-  OP_47(S47),                 // : getlen_opcode_4_plus_sz, # charname
+  OP_PLAY_VOICE(Op44Opcode),          // : getlen_opcode44 - voice?
+  OP_TEXTBOX_DISPLAY(ST),     // : getlen_opcode_4_plus_sz, # text
+  OP_TEXTBOX_CHARNAME(S47),   // : getlen_opcode_4_plus_sz, # charname
   OP_48(B2),                  // : 3,
-  OP_49(B4),                  // : 5, - clear screen
-  OP_4A(B2),                  // : 3, - Wait for user input
+  OP_CLEAR_SCREEN(B4),        // : 5, - clear screen
+  OP_WAIT(B2),                // : 3, - Wait for user input
   OP_4B(B4),                  // : 5,
   OP_4C(B6),                  // : 7,
   OP_4F(B4),                  // : 5,
@@ -599,11 +610,11 @@ pub enum Opcode {
   OP_72(B4),                  // : 5,
   OP_74(B6),                  // : 7,
   OP_75(B4),                  // : 5,
-  OP_CUSTOM_TIP_77(Custom77), // Custom Tip opcode, see docs/opcodes for details.
+  OP_CUSTOM_TIP_77(Custom77), // Custom Tip opcode, see readme for details.
   OP_7B(B4),                  // : 5,
   OP_82(B2),                  // : 3, -
   OP_83(B4),                  // : 5,
-  OP_85(ST),                  // : getlen_opcode_4_plus_sz, # ? Debug string ?
-  OP_86(ST),                  // : getlen_opcode_4_plus_sz, # Special text
-  OP_Insert(InsertOpcode),
+  OP_DEBUG_PRINT(ST),         // : getlen_opcode_4_plus_sz, # ? Debug string ?
+  OP_SPECIAL_TEXT(ST),        // : getlen_opcode_4_plus_sz, # Special text
+  OP_Insert(InsertOpcode),    // Use this to insert new opcodes into a script.
 }
