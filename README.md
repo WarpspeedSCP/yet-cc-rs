@@ -128,6 +128,7 @@ Here are a few things to keep in mind when inserting opcodes:
 
 1. Make sure your text isn't longer than 180 characters per textbox. The `yeti fix` command can be used to check if your line exceeds that number.
 2. Any text instructions that are within an insert structure should have their `sjis_bytes` and `size` fields set to `[]` and `0` respectively. Not doing so will give you some annoying problems.
+3. Don't attempt to modify things like opcode or header values, things could blow up.
 
 ### How do I insert a new line into whatever I write in a text opcode?
 
