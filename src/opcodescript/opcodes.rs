@@ -591,7 +591,7 @@ pub enum Opcode {
   OP_43(B4),                  // : 5,
   OP_PLAY_VOICE(Op44Opcode),          // : getlen_opcode44 - voice?
   OP_TEXTBOX_DISPLAY(ST),     // : getlen_opcode_4_plus_sz, # text
-  OP_TEXTBOX_CHARNAME(S47),   // : getlen_opcode_4_plus_sz, # charname
+  OP_FREE_TEXT_OR_CHARNAME(S47),   // : getlen_opcode_4_plus_sz, # charname
   OP_48(B2),                  // : 3,
   OP_CLEAR_SCREEN(B4),        // : 5, - clear screen
   OP_WAIT(B2),                // : 3, - Wait for user input

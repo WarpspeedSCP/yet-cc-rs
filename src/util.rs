@@ -80,7 +80,7 @@ macro_rules! opcode_common_action {
       Opcode::OP_43($op) => $action,
       Opcode::OP_PLAY_VOICE($op) => $action,
       Opcode::OP_TEXTBOX_DISPLAY($op) => $action,
-      Opcode::OP_TEXTBOX_CHARNAME($op) => $action,
+      Opcode::OP_FREE_TEXT_OR_CHARNAME($op) => $action,
       Opcode::OP_48($op) => $action,
       Opcode::OP_CLEAR_SCREEN($op) => $action,
       Opcode::OP_WAIT($op) => $action,

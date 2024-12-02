@@ -496,7 +496,7 @@ impl Opcode {
       0x44 => Ok(Self::OP_PLAY_VOICE(Op44Opcode::new(address, input))), // (Op44Opcode),     // : getlen_opcode44,
 
       0x45 => Ok(Self::OP_TEXTBOX_DISPLAY(ST::new(address, input))), // (ST),     // : getlen_opcode_4_plus_sz, # text
-      0x47 => Ok(Self::OP_TEXTBOX_CHARNAME(S47::new(address, input))), // (ST),     // : getlen_opcode_4_plus_sz, # charname
+      0x47 => Ok(Self::OP_FREE_TEXT_OR_CHARNAME(S47::new(address, input))), // (ST),     // : getlen_opcode_4_plus_sz, # charname
 
       0x48 => Ok(Self::OP_48(B2::new(address, input))), // (B<2>),     // : 3,
       0x49 => Ok(Self::OP_CLEAR_SCREEN(B4::new(address, input))), // (B<4>),     // : 5,
