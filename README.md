@@ -28,8 +28,15 @@ cargo build --release
 ```
 
 You can then run the command like so:
+
 ```bash
 ./target/release/yeti
+```
+
+On windows, you'd run it like this instead:
+
+```batch
+target\\release\\yeti.exe
 ```
 
 These instructions are written from a Unix perspective. If your are running Windows, I suggest you install git bash from here, first: https://git-scm.com/download/win
@@ -44,10 +51,12 @@ The custom features included in this tool, such as the use of tips, require a mo
 
 ### Examples
 
+**NOTE**: If you're on windows, replace `yeti` with `yeti.exe`. 
+
 - **To extract a scenario file:**
 
 ```bash
-./target/release/yeti decomp --input <path/to/sn.bin> --output <output/directory>
+yeti decomp --input <path/to/sn.bin> --output <output/directory>
 ```
 
 This will decompress, extract and disassemble all scripts from the scenario file into the output directory you specify. Replace the parts in angular brackets with values convenient to you.
@@ -55,7 +64,7 @@ This will decompress, extract and disassemble all scripts from the scenario file
 - **To recreate a scenario file:**
 
 ```bash
-./target/release/yeti recomp --input <input/directory>  --output <new/sn.bin.filename> 
+yeti recomp --input <input/directory>  --output <new/sn.bin.filename> 
 ```
 
 This will take all the scripts in the input directory, assemble, combine and recompress them to create a new scenario file, then put that file where you specify in `<new/sn.bin.filename>`.
@@ -63,7 +72,7 @@ This will take all the scripts in the input directory, assemble, combine and rec
 - **To check/fix strings in a yaml script:**
 
 ```bash
-./target/release/yeti fix --input <a/script/file.yaml> --output <fixed/script/file.yaml>
+yeti fix --input <a/script/file.yaml> --output <fixed/script/file.yaml>
 ```
 
 This will read the input script file (say, from where you extracted the script) and output a version with corrected spacing. This is useful when lines don't look right onscreen, or to check if you need to split text across multiple text boxes.
