@@ -302,10 +302,9 @@ pub struct StringOpcode {
   pub opcode: u8,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_inline_ints_slice")]
   pub header: [u8; 4],
-  #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_inline_ints_vec")]
-  pub sjis_bytes: Vec<u8>,
-  pub size: usize,
   pub unicode: String,
+  pub notes: Option<String>,
+  pub translation: Option<String>,
 }
 
 impl From<StringOpcode> for Opcode {
@@ -331,10 +330,9 @@ pub struct String47Opcode {
   pub arg1: u16,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_opt_hex_u16")]
   pub opt_arg2: Option<u16>,
-  #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_inline_ints_vec")]
-  pub sjis_bytes: Vec<u8>,
-  pub size: usize,
   pub unicode: String,
+  pub notes: Option<String>,
+  pub translation: Option<String>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -433,15 +431,19 @@ pub struct Choice {
   pub address: u32,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_inline_ints_slice")]
   pub header: [u8; 10],
-  #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_inline_ints_vec")]
-  pub sjis_bytes: Vec<u8>,
   pub unicode: String,
+  pub notes: Option<String>,
+  pub translation: Option<String>,
 }
 
 impl SizedOpcode for Choice {
   fn size(&self) -> usize {
     use encoding_rs::SHIFT_JIS;
-    self.header.len() + SHIFT_JIS.encode(&self.unicode).0.len() + 1
+    self.header.len() + 1 + if let Some(tl) = &self.translation {
+      SHIFT_JIS.encode(tl).0.len()
+    } else {
+      SHIFT_JIS.encode(&self.unicode).0.len()
+    }
   }
 }
 
@@ -460,7 +462,6 @@ pub struct ChoiceOpcode {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_inline_ints_slice")]
   pub header: [u8; 0x03],
   pub choices: Vec<Choice>,
-  pub size: usize,
 }
 
 /// Avoid serializing this opcode, it is only meant to be used when converting to an opcodescript file.

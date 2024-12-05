@@ -232,15 +232,15 @@ impl SwitchOpcode {
 
 impl StringOpcode {
   pub fn new(address: usize, input: &[u8]) -> Self {
-    let (sjis_bytes, unicode) = get_sjis_bytes(address + 1 + 4, input);
+    let (_, unicode) = get_sjis_bytes(address + 1 + 4, input);
     Self {
       address: address as u32,
       actual_address: address as u32,
       opcode: input[address],
       header: transmute_to_array(address + 1, input),
       unicode,
-      size: 1 + 4 + sjis_bytes.len(),
-      sjis_bytes,
+      notes: None,
+      translation: None,
     }
   }
 }
@@ -249,7 +249,7 @@ impl String47Opcode {
   pub fn new(address: usize, input: &[u8]) -> Self {
     let arg1 = transmute_to_u16(address + 1, input);
     let string_offset = if arg1 == 0x000D { 2 } else { 4 };
-    let (sjis_bytes, unicode) = get_sjis_bytes(address + 1 + string_offset, input);
+    let (_, unicode) = get_sjis_bytes(address + 1 + string_offset, input);
     Self {
       address: address as u32,
       actual_address: address as u32,
@@ -261,8 +261,8 @@ impl String47Opcode {
         Some(transmute_to_u16(address + 3, input))
       },
       unicode,
-      size: 1 + string_offset + sjis_bytes.len(),
-      sjis_bytes,
+      notes: None,
+      translation: None,
     }
   }
 }
@@ -333,12 +333,13 @@ impl JumpOpcode4 {
 
 impl Choice {
   pub fn new(address: usize, input: &[u8]) -> Self {
-    let (sjis_bytes, choice_str) = get_sjis_bytes(address + 10, input);
+    let (_, choice_str) = get_sjis_bytes(address + 10, input);
     Choice {
       address: address as u32,
       header: input[address..address + 10].try_into().unwrap(),
-      sjis_bytes,
       unicode: choice_str,
+      notes: None,
+      translation: None,
     }
   }
 }
@@ -353,7 +354,7 @@ impl ChoiceOpcode {
     let mut choice_addr = 7;
     for _ in 0..n_choices {
       let choice = Choice::new(address + choice_addr, input);
-      choice_addr += choice.header.len() + choice.sjis_bytes.len();
+      choice_addr += choice.header.len() + encode_sjis(&choice.unicode).len() + 1;
       choices.push(choice);
     }
 
@@ -365,7 +366,6 @@ impl ChoiceOpcode {
       n_choices,
       header,
       choices,
-      size: choice_addr,
     }
   }
 }

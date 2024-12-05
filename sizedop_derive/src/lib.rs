@@ -76,7 +76,11 @@ fn gen_size_opcode_impl(struct_name: &str, data: &DataStruct) -> Vec<proc_macro2
       "unicode" => quotes.push(quote! {
         {
           use encoding_rs::SHIFT_JIS;
-          size += SHIFT_JIS.encode(&self.unicode).0.len() + 1;
+          size += if let Some(tl) = &self.translation {
+            SHIFT_JIS.encode(tl).0.len()
+          } else {
+            SHIFT_JIS.encode(&self.unicode).0.len()
+          } + 1
         }
       }),
       _ => {}

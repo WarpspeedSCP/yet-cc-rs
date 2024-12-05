@@ -10,6 +10,11 @@ pub fn transmute_to_u16(address: usize, input: &[u8]) -> u16 {
   u16::from_le_bytes(transmute_to_array(address, input))
 }
 
+pub fn encode_sjis(unicode: &str) -> Vec<u8> {
+  use encoding_rs::SHIFT_JIS;
+  SHIFT_JIS.encode(unicode).0.to_vec()
+}
+
 pub fn get_sjis_bytes(address: usize, input: &[u8]) -> (Vec<u8>, String) {
   let mut size = 0usize;
   let mut output = vec![];
