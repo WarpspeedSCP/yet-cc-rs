@@ -425,7 +425,7 @@ pub struct DirectJumpOpcode {
   pub jump_address: u32,
 }
 
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize, SizedOpcode)]
 pub struct Choice {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
@@ -436,16 +436,6 @@ pub struct Choice {
   pub translation: Option<String>,
 }
 
-impl SizedOpcode for Choice {
-  fn size(&self) -> usize {
-    use encoding_rs::SHIFT_JIS;
-    self.header.len() + 1 + if let Some(tl) = &self.translation {
-      SHIFT_JIS.encode(tl).0.len()
-    } else {
-      SHIFT_JIS.encode(&self.unicode).0.len()
-    }
-  }
-}
 
 #[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize)]
 pub struct ChoiceOpcode {
