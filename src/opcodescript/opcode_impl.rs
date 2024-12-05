@@ -413,6 +413,18 @@ impl Custom77 {
   }
 }
 
+impl BinarySerialize for Custom77 {
+  fn binary_serialize(&self) -> Vec<u8> {
+    return vec![self.opcode, self.condition, 0, 0];
+  }
+}
+
+impl SizedOpcode for Custom77 {
+  fn size(&self) -> usize {
+    4
+  }
+}
+
 impl Opcode {
   pub fn eat(address: usize, input: &[u8]) -> Result<Self, String> {
     match input[address] {

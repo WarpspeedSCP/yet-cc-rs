@@ -83,7 +83,6 @@ pub trait BinarySerialize {
 }
 
 #[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize)]
-
 pub struct SingleByteOpcode {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
@@ -502,18 +501,6 @@ pub struct Custom77 {
   pub skip: u16,
   #[serde(skip)]
   pub skip_bytes: u16,
-}
-
-impl BinarySerialize for Custom77 {
-  fn binary_serialize(&self) -> Vec<u8> {
-    return vec![self.opcode, self.condition, 0, 0];
-  }
-}
-
-impl SizedOpcode for Custom77 {
-  fn size(&self) -> usize {
-    4
-  }
 }
 
 pub type B2 = BasicOpcode2;
