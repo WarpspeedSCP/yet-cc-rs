@@ -36,7 +36,7 @@ You can then run the command like so:
 On windows, you'd run it like this instead:
 
 ```batch
-target\\release\\yeti.exe
+target\release\yeti.exe
 ```
 
 These instructions are written from a Unix perspective. If your are running Windows, I suggest you install git bash from here, first: https://git-scm.com/download/win
@@ -51,7 +51,7 @@ The custom features included in this tool, such as the use of tips, require a mo
 
 ### Examples
 
-**NOTE**: If you're on windows, replace `yeti` with `yeti.exe`. 
+**NOTE**: If you're on windows, replace `yeti` with `./yeti.exe`. (assuming the yeti executable is in the current directory)
 
 - **To extract a scenario file:**
 
@@ -138,7 +138,9 @@ Here are a few things to keep in mind when inserting opcodes:
 1. Make sure your text isn't longer than 180 characters per textbox. The `yeti fix` command can be used to check if your line exceeds that number.
 2. Any text instructions that are within an insert structure should have their `sjis_bytes` and `size` fields set to `[]` and `0` respectively. Not doing so will give you some annoying problems.
 3. Don't attempt to modify things like opcode or header values, things could blow up.
-
+4. Try to preserve the order of instructions wherever possible.
+   - You will notice patterns of 4A, 6A, 49 and 4F a lot;
+   - make sure any additions you make respect this order.
 ### How do I insert a new line into whatever I write in a text opcode?
 
 Use `%N` to add a line break in the text.
