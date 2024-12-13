@@ -19,7 +19,7 @@ Note that this will only work if the cargo install directory, usually `$HOME/.ca
 
 You might need to modify your `.bashrc` or equivalent shell init script to get this to work. 
 
-I don't know enough about how Windows does things, so if it comes to that, consider putting the compiled `yeti.exe` file (located at `target\\release\\yeti.exe`) somewhere accessible, or edit the path to point there (Check this post out: https://stackoverflow.com/questions/4822400/register-an-exe-so-you-can-run-it-from-any-command-line-in-windows).
+I don't know enough about how Windows does things, so if it comes to that, consider putting the compiled `yeti.exe` file (located at `target\release\yeti.exe`) somewhere accessible, or edit the path to point there (Check this post out: https://stackoverflow.com/questions/4822400/register-an-exe-so-you-can-run-it-from-any-command-line-in-windows).
 
 If you only want to build the tool without installing it, use the command below instead of the last line above:
 
