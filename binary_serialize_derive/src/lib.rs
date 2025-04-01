@@ -63,11 +63,11 @@ fn gen_serialize_opcode_impl(data: &DataStruct) -> Vec<proc_macro2::TokenStream>
             for choice in &self.choices {
               output.extend(choice.header);
               let res = if let Some(tl) = &choice.translation {
-                SHIFT_JIS.encode(tl.as_str()).0
+                crate::util::encode_sjis(tl.as_str())
               } else {
-                SHIFT_JIS.encode(&choice.unicode).0
+                crate::util::encode_sjis(&choice.unicode)
               };
-              output.extend(res.as_ref());
+              output.extend(res);
               output.push(0u8);
             }
           }
@@ -76,7 +76,7 @@ fn gen_serialize_opcode_impl(data: &DataStruct) -> Vec<proc_macro2::TokenStream>
       "unicode" => quotes.push(quote! {
         if self.translation.is_none() {
           use encoding_rs::SHIFT_JIS;
-          output.extend(SHIFT_JIS.encode(&self.unicode).0.as_ref());
+          output.extend(crate::util::encode_sjis(&self.unicode));
           output.push(0u8);
         }
         
@@ -84,7 +84,7 @@ fn gen_serialize_opcode_impl(data: &DataStruct) -> Vec<proc_macro2::TokenStream>
       "translation" => quotes.push(quote! {
         if let Some(tl) = &self.translation {
           use encoding_rs::SHIFT_JIS;
-          output.extend(SHIFT_JIS.encode(tl.as_str()).0.as_ref());
+          output.extend(crate::util::encode_sjis(tl.as_str()));
           output.push(0u8);
         }
       }),

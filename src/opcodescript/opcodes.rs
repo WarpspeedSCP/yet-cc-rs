@@ -516,21 +516,21 @@ pub type C = ChoiceOpcode;
 #[allow(non_camel_case_types)]
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub enum Opcode {
-  OP_RESET(S), // reset?
-  OP_DIRECT_JUMP(D), // unconditional jump
-  OP_JUMP_TO_SCRIPT(L), // jump to script in index
+  OP_RESET(S), // reset? 0x00
+  OP_DIRECT_JUMP(D), // unconditional jump 0x01
+  OP_JUMP_TO_SCRIPT(L), // jump to script in index 0x02
   OP_03(B4),
   OP_04(B4),
-  OP_SCRIPT_RETURN(S), // Seems like 1 byte is the only valid size; script end/return?
-  JE(J4),  // je
-  JNE(J4),   // jne
-  JG(J4),
-  JGE(J4),
-  JL(J4),
-  JLE(J4),
-  JZ(J2),
-  JNZ(J2),
-  Switch(SS),
+  OP_SCRIPT_RETURN(S), // Seems like 1 byte is the only valid size; script end/return? 0x05
+  JE(J4),     // je 0x06
+  JNE(J4),    // jne 0x07
+  JG(J4),     // 0x08
+  JGE(J4),    // 0x09
+  JL(J4),     // 0x0A
+  JLE(J4),    // 0x0B
+  JZ(J2),     // 0x0C
+  JNZ(J2),    // 0x0D
+  Switch(SS), // 0x0E
   OP_10(B4),
   OP_11(B4),
   OP_12(B4),
@@ -556,8 +556,8 @@ pub enum Opcode {
   OP_2E(S),                   // : 1,
   OP_2F(B2),                  // : 3,
   OP_30(B10),                 // : 11,
-  OP_CHOICE(C),               // : getlen_opcodes_31_32, # choice
-  OP_MENU_CHOICE(C),             // : getlen_opcodes_31_32,
+  OP_CHOICE(C),               // : getlen_opcodes_31_32, # choice 0x31
+  OP_MENU_CHOICE(C),             // : getlen_opcodes_31_32, 0x32
   OP_33(S),                   // : 1,
   OP_34(B10),                 // : 11,
   OP_36(B3),                  // : 4,
@@ -567,12 +567,12 @@ pub enum Opcode {
   OP_3C(B2),                  // : 3,
   OP_42(B8),                  // : 9,
   OP_43(B4),                  // : 5,
-  OP_PLAY_VOICE(Op44Opcode),          // : getlen_opcode44 - voice?
-  OP_TEXTBOX_DISPLAY(ST),     // : getlen_opcode_4_plus_sz, # text
-  OP_FREE_TEXT_OR_CHARNAME(S47),   // : getlen_opcode_4_plus_sz, # charname
+  OP_PLAY_VOICE(Op44Opcode),          // : getlen_opcode44 - voice? 0x44
+  OP_TEXTBOX_DISPLAY(ST),     // : getlen_opcode_4_plus_sz, # text 0x45
+  OP_FREE_TEXT_OR_CHARNAME(S47),   // : getlen_opcode_4_plus_sz, # charname 0x47
   OP_48(B2),                  // : 3,
-  OP_CLEAR_SCREEN(B4),        // : 5, - clear screen
-  OP_WAIT(B2),                // : 3, - Wait for user input
+  OP_CLEAR_SCREEN(B4),        // : 5, - clear screen 0x49
+  OP_WAIT(B2),                // : 3, - Wait for user input 0x4A
   OP_4B(B4),                  // : 5,
   OP_4C(B6),                  // : 7,
   OP_4F(B4),                  // : 5,
@@ -590,11 +590,11 @@ pub enum Opcode {
   OP_72(B4),                  // : 5,
   OP_74(B6),                  // : 7,
   OP_75(B4),                  // : 5,
-  OP_CUSTOM_TIP_77(Custom77), // Custom Tip opcode, see readme for details.
+  OP_CUSTOM_TIP_77(Custom77), // Custom Tip opcode, see readme for details. 0x77
   OP_7B(B4),                  // : 5,
   OP_82(B2),                  // : 3, -
   OP_83(B4),                  // : 5,
-  OP_DEBUG_PRINT(ST),         // : getlen_opcode_4_plus_sz, # ? Debug string ?
-  OP_SPECIAL_TEXT(ST),        // : getlen_opcode_4_plus_sz, # Special text
-  OP_Insert(InsertOpcode),    // Use this to insert new opcodes into a script.
+  OP_DEBUG_PRINT(ST),         // : getlen_opcode_4_plus_sz, # ? Debug string ? 0x85
+  OP_SPECIAL_TEXT(ST),        // : getlen_opcode_4_plus_sz, # Special text  0x86
+  OP_Insert(InsertOpcode),    // Use this to insert new opcodes into a script. 0xFF (not retained after compilation)
 }

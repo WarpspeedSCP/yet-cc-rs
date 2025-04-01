@@ -46,11 +46,11 @@ pub(crate) fn lz77_decompress(input: &[u8]) -> Vec<u8> {
         let info = transmute_to_u16(input_ptr, input);
         input_ptr += 2;
 
-        let num = 3 + ((info & 0x0F00) >> 8);
-        let disp = (((info & 0xF000) >> 4) | (info & 0xFF)) as isize;
-        let mut ptr = offset - ((offset - 18 - disp) & 0x0FFF);
+        let n_bytes = 3 + ((info & 0x0F00) >> 8);
+        let buffer_offset = (((info & 0xF000) >> 4) | (info & 0xFF)) as isize;
+        let mut ptr = offset - ((offset - 18 - buffer_offset) & 0x0FFF);
 
-        for _ in 0..num {
+        for _ in 0..n_bytes {
           output[offset as usize] = if ptr < 0 { 0 } else { output[ptr as usize] };
           offset += 1;
           ptr += 1;

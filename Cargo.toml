@@ -14,7 +14,9 @@ regex = "1.10.5"
 sizedop_derive = { path = "./sizedop_derive" }
 binary_serialize_derive = { path = "./binary_serialize_derive" }
 serde_yml = "*"
+serde_json = "*"
 clap = "4.5.8"
 walkdir = "2.5.0"
 log = "0.4.22"
 env_logger = "0.11.5"
+bimap = "0.6.3"

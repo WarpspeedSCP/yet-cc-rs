@@ -313,19 +313,51 @@ fn adjust_single_opcode(
 
 #[cfg(test)]
 mod tests {
-  use crate::opcodescript::Script;
+  use std::collections::{HashMap, HashSet};
+
+use crate::opcodescript::Script;
+
+  // #[test]
+  // fn test_thing() {
+  //   let thing = include_bytes!("../../scenario/0045.yaml");
+
+  //   let res: Script = serde_yml::from_slice(thing).unwrap();
+  //   res.binary_serialize();
+  // }
 
   #[test]
-  fn test_thing() {
-    let thing = include_bytes!("../../0046.opcodescript");
+  fn things() {
+    let all = walkdir::WalkDir::new("/home/wscp/cc_tl/scenario");
 
-    let res = Script::new(thing);
+    let mut thing = HashSet::new();
 
-    std::fs::write("0046.yaml", serde_yml::to_string(&res).unwrap()
-        .replace("'[", "[")
-        .replace("]'", "]")
-        .replace(r#"'""#, "")
-        .replace(r#""'"#, ""),
-    ).unwrap();
+    for i in all
+      .into_iter()
+      .filter_map(|it| it.ok())
+      .filter(|file| file.file_name().to_string_lossy().ends_with("yaml")) {
+        let Ok(res): Result<Script, _> = serde_yml::from_slice(&std::fs::read(i.path()).unwrap()) else {
+          continue;
+        };
+
+        let all_unique_char_names_and_tls: HashMap<_, _> = res.opcodes.into_iter().filter_map(|it| {
+          if it.opcode() != 0x47 {
+            return None;
+          }
+          if let crate::Opcode::OP_FREE_TEXT_OR_CHARNAME(op) = it {
+            return if op.opt_arg2.is_none() {
+              Some((op.unicode, op.translation.unwrap_or_default()))
+            } else {
+              None
+            }
+          } else {
+            None
+          }
+        }).collect();
+        // println!("{all_unique_char_names_and_tls:#?}");
+        thing.extend(all_unique_char_names_and_tls.into_iter());
+    }
+    let output: String = thing.iter().map(|(a, b)| format!("{a} : {b}\n")).collect();
+
+    println!("{output}");
   }
 }
