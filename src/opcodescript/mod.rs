@@ -73,7 +73,11 @@ impl Script {
             let size = opcode.size();
 
             for (op, this_idx) in skip_stack.iter_mut() {
-              if op.skip_bytes.checked_sub(size as u16).map_or(false, |_| true) {
+              if op
+                .skip_bytes
+                .checked_sub(size as u16)
+                .map_or(false, |_| true)
+              {
                 op.skip += 1;
                 op.skip_bytes -= size as u16
               } else {
@@ -85,19 +89,20 @@ impl Script {
               let thing = skip_stack
                 .iter()
                 .find(|it| it.1 == i)
-                .map(|(a, b)| (a.clone(), *b)).unwrap();
-              
-                match opcodes.get_mut(thing.1).unwrap() {
-                  Opcode::OP_CUSTOM_TIP_77(opcode) => {
-                    opcode.skip = thing.0.skip;
-                  }
-                  _ => {}
+                .map(|(a, b)| (a.clone(), *b))
+                .unwrap();
+
+              match opcodes.get_mut(thing.1).unwrap() {
+                Opcode::OP_CUSTOM_TIP_77(opcode) => {
+                  opcode.skip = thing.0.skip;
                 }
-              
+                _ => {}
+              }
+
               skip_stack.retain(|it| it.1 != i);
             }
           }
-          
+
           opcodes.push(opcode);
 
           if at_end {
@@ -146,11 +151,11 @@ impl Script {
       match opcode {
         Opcode::OP_DIRECT_JUMP(op) => {
           let mut map = HashMap::new();
-          let idx =             self
-          .opcodes
-          .par_iter()
-          .position_any(|it| it.address() == op.jump_address)
-          .unwrap();
+          let idx = self
+            .opcodes
+            .par_iter()
+            .position_any(|it| it.address() == op.jump_address)
+            .unwrap();
           map.insert(0, idx);
           log::debug!(
             "Direct jump opcode at 0x{:08X} (actual 0x{:08X}) jumps to: 0x{:04X}",
@@ -183,11 +188,11 @@ impl Script {
         }
         Opcode::JZ(op) | Opcode::JNZ(op) => {
           let mut map = HashMap::new();
-          let data =             self
-          .opcodes
-          .par_iter()
-          .position_any(|it| it.address() == op.jump_address)
-          .unwrap();
+          let data = self
+            .opcodes
+            .par_iter()
+            .position_any(|it| it.address() == op.jump_address)
+            .unwrap();
           map.insert(0, data);
           jump_map.insert(op.address, map);
           log::debug!(
@@ -350,7 +355,7 @@ fn adjust_single_opcode(
 mod tests {
   use std::collections::{HashMap, HashSet};
 
-use crate::opcodescript::Script;
+  use crate::opcodescript::Script;
 
   // #[test]
   // fn test_thing() {
@@ -369,12 +374,17 @@ use crate::opcodescript::Script;
     for i in all
       .into_iter()
       .filter_map(|it| it.ok())
-      .filter(|file| file.file_name().to_string_lossy().ends_with("yaml")) {
-        let Ok(res): Result<Script, _> = serde_yml::from_slice(&std::fs::read(i.path()).unwrap()) else {
-          continue;
-        };
+      .filter(|file| file.file_name().to_string_lossy().ends_with("yaml"))
+    {
+      let Ok(res): Result<Script, _> = serde_yml::from_slice(&std::fs::read(i.path()).unwrap())
+      else {
+        continue;
+      };
 
-        let all_unique_char_names_and_tls: HashMap<_, _> = res.opcodes.into_iter().filter_map(|it| {
+      let all_unique_char_names_and_tls: HashMap<_, _> = res
+        .opcodes
+        .into_iter()
+        .filter_map(|it| {
           if it.opcode() != 0x47 {
             return None;
           }
@@ -383,13 +393,14 @@ use crate::opcodescript::Script;
               Some((op.unicode, op.translation.unwrap_or_default()))
             } else {
               None
-            }
+            };
           } else {
             None
           }
-        }).collect();
-        // println!("{all_unique_char_names_and_tls:#?}");
-        thing.extend(all_unique_char_names_and_tls.into_iter());
+        })
+        .collect();
+      // println!("{all_unique_char_names_and_tls:#?}");
+      thing.extend(all_unique_char_names_and_tls.into_iter());
     }
     let output: String = thing.iter().map(|(a, b)| format!("{a} : {b}\n")).collect();
 

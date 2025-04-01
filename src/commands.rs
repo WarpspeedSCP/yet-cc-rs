@@ -1,4 +1,10 @@
-use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
+use rayon::{
+  prelude::{
+    IntoParallelIterator, IntoParallelRefIterator, ParallelBridge, ParallelIterator,
+    ParallelSliceMut,
+  },
+  vec,
+};
 
 use crate::{
   lz77,
@@ -114,12 +120,12 @@ pub fn do_extract_command(data: Vec<u8>, outfile: &PathBuf) {
 }
 
 fn script2yaml(script: &Script) -> String {
-    serde_yml::to_string(&script)
-      .unwrap()
-      .replace("'[", "[")
-      .replace("]'", "]")
-      .replace(r#"'""#, "")
-      .replace(r#""'"#, "")
+  serde_yml::to_string(&script)
+    .unwrap()
+    .replace("'[", "[")
+    .replace("]'", "]")
+    .replace(r#"'""#, "")
+    .replace(r#""'"#, "")
 }
 
 pub fn do_reencode_command(outfile: &Path, filename: &Path) {
@@ -146,11 +152,7 @@ pub fn do_decode_command(outfile: &Path, filename: &Path) {
     outfile.to_owned()
   };
   log::info!("writing output to {}", outfile.display());
-  std::fs::write(
-    outfile,
-    script2yaml(&script),
-  )
-  .unwrap();
+  std::fs::write(outfile, script2yaml(&script)).unwrap();
 }
 
 fn decode_opcodescript(filename: &Path) -> Script {

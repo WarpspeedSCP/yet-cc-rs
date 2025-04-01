@@ -436,7 +436,6 @@ pub struct Choice {
   pub translation: Option<String>,
 }
 
-
 #[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize)]
 pub struct ChoiceOpcode {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
@@ -516,21 +515,21 @@ pub type C = ChoiceOpcode;
 #[allow(non_camel_case_types)]
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub enum Opcode {
-  OP_RESET(S), // reset? 0x00
-  OP_DIRECT_JUMP(D), // unconditional jump 0x01
+  OP_RESET(S),          // reset? 0x00
+  OP_DIRECT_JUMP(D),    // unconditional jump 0x01
   OP_JUMP_TO_SCRIPT(L), // jump to script in index 0x02
   OP_03(B4),
   OP_04(B4),
   OP_SCRIPT_RETURN(S), // Seems like 1 byte is the only valid size; script end/return? 0x05
-  JE(J4),     // je 0x06
-  JNE(J4),    // jne 0x07
-  JG(J4),     // 0x08
-  JGE(J4),    // 0x09
-  JL(J4),     // 0x0A
-  JLE(J4),    // 0x0B
-  JZ(J2),     // 0x0C
-  JNZ(J2),    // 0x0D
-  Switch(SS), // 0x0E
+  JE(J4),              // je 0x06
+  JNE(J4),             // jne 0x07
+  JG(J4),              // 0x08
+  JGE(J4),             // 0x09
+  JL(J4),              // 0x0A
+  JLE(J4),             // 0x0B
+  JZ(J2),              // 0x0C
+  JNZ(J2),             // 0x0D
+  Switch(SS),          // 0x0E
   OP_10(B4),
   OP_11(B4),
   OP_12(B4),
@@ -552,49 +551,49 @@ pub enum Opcode {
   OP_24(B6),  // : 7,
   OP_25(B4),  // : 5,  // 26 to 2C are absent in final complete for desktop.
   // An opportunity to insert new code?
-  OP_2D(B4),                  // : 5,
-  OP_2E(S),                   // : 1,
-  OP_2F(B2),                  // : 3,
-  OP_30(B10),                 // : 11,
-  OP_CHOICE(C),               // : getlen_opcodes_31_32, # choice 0x31
+  OP_2D(B4),                     // : 5,
+  OP_2E(S),                      // : 1,
+  OP_2F(B2),                     // : 3,
+  OP_30(B10),                    // : 11,
+  OP_CHOICE(C),                  // : getlen_opcodes_31_32, # choice 0x31
   OP_MENU_CHOICE(C),             // : getlen_opcodes_31_32, 0x32
-  OP_33(S),                   // : 1,
-  OP_34(B10),                 // : 11,
-  OP_36(B3),                  // : 4,
-  OP_39(B4),                  // : 5,
-  OP_3A(B4),                  // : 5,
-  OP_3B(B2),                  // : 3,
-  OP_3C(B2),                  // : 3,
-  OP_42(B8),                  // : 9,
-  OP_43(B4),                  // : 5,
-  OP_PLAY_VOICE(Op44Opcode),          // : getlen_opcode44 - voice? 0x44
-  OP_TEXTBOX_DISPLAY(ST),     // : getlen_opcode_4_plus_sz, # text 0x45
-  OP_FREE_TEXT_OR_CHARNAME(S47),   // : getlen_opcode_4_plus_sz, # charname 0x47
-  OP_48(B2),                  // : 3,
-  OP_CLEAR_SCREEN(B4),        // : 5, - clear screen 0x49
-  OP_WAIT(B2),                // : 3, - Wait for user input 0x4A
-  OP_4B(B4),                  // : 5,
-  OP_4C(B6),                  // : 7,
-  OP_4F(B4),                  // : 5,
-  OP_51(B6),                  // : 7,
-  OP_59(S),                   // : 1,
-  OP_5A(S),                   // : 1,
-  OP_5F(S),                   // : 1,
-  OP_68(B10),                 // : 11, // always comes in pairs. Start and end of something?
-  OP_69(B2),                  // : 3,
-  OP_6A(B4),                  // : 5, debug...
-  OP_6C(B16),                 // : 17,
-  OP_6E(B4),                  // : 5,
-  OP_6F(B6),                  // : 7, unused
-  OP_71(B6),                  // : 7. Skips the succeeding 5A if op 2 is not 0xFFFF.
-  OP_72(B4),                  // : 5,
-  OP_74(B6),                  // : 7,
-  OP_75(B4),                  // : 5,
-  OP_CUSTOM_TIP_77(Custom77), // Custom Tip opcode, see readme for details. 0x77
-  OP_7B(B4),                  // : 5,
-  OP_82(B2),                  // : 3, -
-  OP_83(B4),                  // : 5,
-  OP_DEBUG_PRINT(ST),         // : getlen_opcode_4_plus_sz, # ? Debug string ? 0x85
-  OP_SPECIAL_TEXT(ST),        // : getlen_opcode_4_plus_sz, # Special text  0x86
-  OP_Insert(InsertOpcode),    // Use this to insert new opcodes into a script. 0xFF (not retained after compilation)
+  OP_33(S),                      // : 1,
+  OP_34(B10),                    // : 11,
+  OP_36(B3),                     // : 4,
+  OP_39(B4),                     // : 5,
+  OP_3A(B4),                     // : 5,
+  OP_3B(B2),                     // : 3,
+  OP_3C(B2),                     // : 3,
+  OP_42(B8),                     // : 9,
+  OP_43(B4),                     // : 5,
+  OP_PLAY_VOICE(Op44Opcode),     // : getlen_opcode44 - voice? 0x44
+  OP_TEXTBOX_DISPLAY(ST),        // : getlen_opcode_4_plus_sz, # text 0x45
+  OP_FREE_TEXT_OR_CHARNAME(S47), // : getlen_opcode_4_plus_sz, # charname 0x47
+  OP_48(B2),                     // : 3,
+  OP_CLEAR_SCREEN(B4),           // : 5, - clear screen 0x49
+  OP_WAIT(B2),                   // : 3, - Wait for user input 0x4A
+  OP_4B(B4),                     // : 5,
+  OP_4C(B6),                     // : 7,
+  OP_4F(B4),                     // : 5,
+  OP_51(B6),                     // : 7,
+  OP_59(S),                      // : 1,
+  OP_5A(S),                      // : 1,
+  OP_5F(S),                      // : 1,
+  OP_68(B10),                    // : 11, // always comes in pairs. Start and end of something?
+  OP_69(B2),                     // : 3,
+  OP_6A(B4),                     // : 5, debug...
+  OP_6C(B16),                    // : 17,
+  OP_6E(B4),                     // : 5,
+  OP_6F(B6),                     // : 7, unused
+  OP_71(B6),                     // : 7. Skips the succeeding 5A if op 2 is not 0xFFFF.
+  OP_72(B4),                     // : 5,
+  OP_74(B6),                     // : 7,
+  OP_75(B4),                     // : 5,
+  OP_CUSTOM_TIP_77(Custom77),    // Custom Tip opcode, see readme for details. 0x77
+  OP_7B(B4),                     // : 5,
+  OP_82(B2),                     // : 3, -
+  OP_83(B4),                     // : 5,
+  OP_DEBUG_PRINT(ST),            // : getlen_opcode_4_plus_sz, # ? Debug string ? 0x85
+  OP_SPECIAL_TEXT(ST),           // : getlen_opcode_4_plus_sz, # Special text  0x86
+  OP_Insert(InsertOpcode), // Use this to insert new opcodes into a script. 0xFF (not retained after compilation)
 }

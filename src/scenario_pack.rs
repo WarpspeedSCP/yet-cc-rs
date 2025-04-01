@@ -25,7 +25,7 @@ pub fn parse_scenario(input: &[u8]) -> BTreeMap<DirEntry, Script> {
     let entry_size = transmute_to_u32(offset + 4, input) as usize;
     log::debug!("Parsing script {entry_id:04}");
     let (script, error) = Script::new(&input[entry_offset..entry_offset + entry_size]);
-    
+
     if let Some(error) = error {
       if entry_id == 352 {
         log::info!("Script 352 didn't parse correctly; this is expected.");

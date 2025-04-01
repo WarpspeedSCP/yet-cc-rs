@@ -45,16 +45,15 @@ where
             } else {
               false
             }
-          }).collect::<Vec<_>>()
+          })
+          .collect::<Vec<_>>()
       })
       .collect()
   }
 }
 
 fn main() {
-  env_logger::builder()
-    .format_timestamp(None)
-    .init();
+  env_logger::builder().format_timestamp(None).init();
 
   let mut app = clap::Command::new("yeti")
     .about("A tool to decode and re-encode scenario files for CROSS†CHANNEL final complete (for PC).")
@@ -131,9 +130,7 @@ fn main() {
   let outfile: PathBuf = matches
     .get_one("output")
     .map(|it: &String| PathBuf::from(it))
-    .or_else(|| {
-      Some(std::env::temp_dir())
-    })
+    .or_else(|| Some(std::env::temp_dir()))
     .expect("Expected a valid output file");
 
   if in_dir && outfile.is_file() {

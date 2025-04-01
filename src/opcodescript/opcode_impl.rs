@@ -433,20 +433,20 @@ impl Opcode {
 
       0x01 => Ok(Self::OP_DIRECT_JUMP(D::new(address, input))), // (B<4>), // unconditional jump
       0x02 => Ok(Self::OP_JUMP_TO_SCRIPT(L::new(address, input))), // (B<4>), // jump to script in index
-      0x03 => Ok(Self::OP_03(B4::new(address, input))), // (B<4>),
-      0x04 => Ok(Self::OP_04(B4::new(address, input))), // (B<4>),
+      0x03 => Ok(Self::OP_03(B4::new(address, input))),            // (B<4>),
+      0x04 => Ok(Self::OP_04(B4::new(address, input))),            // (B<4>),
 
       0x05 => Ok(Self::OP_SCRIPT_RETURN(S::new(address, input))), // Seems like 1 byte is the only valid size; script end/return?
 
       0x06 => Ok(Self::JE(J4::new(address, input))), // (J<4>), // je
-      0x07 => Ok(Self::JNE(J4::new(address, input))),  // (J<4>), // jne
+      0x07 => Ok(Self::JNE(J4::new(address, input))), // (J<4>), // jne
       0x08 => Ok(Self::JG(J4::new(address, input))), // (J<4>), // jg
-      0x09 => Ok(Self::JGE(J4::new(address, input))),  // (J<4>), // jge
+      0x09 => Ok(Self::JGE(J4::new(address, input))), // (J<4>), // jge
       0x0A => Ok(Self::JL(J4::new(address, input))), // (J<4>), // jl
-      0x0B => Ok(Self::JLE(J4::new(address, input))),  // (J<4>), // jle
+      0x0B => Ok(Self::JLE(J4::new(address, input))), // (J<4>), // jle
 
       0x0C => Ok(Self::JZ(J2::new(address, input))), // (J<6>), // jz
-      0x0D => Ok(Self::JNZ(J2::new(address, input))),  // (J<6>), // jnz
+      0x0D => Ok(Self::JNZ(J2::new(address, input))), // (J<6>), // jnz
       0x0E => Ok(Self::Switch(SS::new(address, input))), // (SS),   // switch
 
       0x10 => Ok(Self::OP_10(B4::new(address, input))), // (B<4>),
@@ -598,12 +598,12 @@ impl Opcode {
 }
 
 impl TryFrom<Opcode> for Custom77 {
-    type Error = &'static str;
+  type Error = &'static str;
 
-    fn try_from(value: Opcode) -> Result<Self, Self::Error> {
-        match value {
-          Opcode::OP_CUSTOM_TIP_77(value) => Ok(value),
-          _ => Err("Opcode was not a tip."),
-        }
+  fn try_from(value: Opcode) -> Result<Self, Self::Error> {
+    match value {
+      Opcode::OP_CUSTOM_TIP_77(value) => Ok(value),
+      _ => Err("Opcode was not a tip."),
     }
+  }
 }
