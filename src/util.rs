@@ -140,7 +140,7 @@ pub fn encode_sjis(unicode: &str) -> Vec<u8> {
   use encoding_rs::SHIFT_JIS;
   let mut in_italics = false;
   let mut collector = vec![];
-  let tokens = dbg!(tokens(unicode));
+  let tokens = tokens(unicode);
   let mut bslash_active = false;
 
   for substr in tokens {
