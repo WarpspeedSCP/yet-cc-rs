@@ -141,18 +141,22 @@ impl Script {
       .first()
       .map(Opcode::address)
       .unwrap_or_default() as usize;
-
+    log::debug!("Actual address start is 0x{actual_address:08X}");
     for opcode in opcodes.iter_mut() {
       match opcode {
         Opcode::OP_DIRECT_JUMP(op) => {
           let mut map = HashMap::new();
-          map.insert(
-            0,
-            self
-              .opcodes
-              .par_iter()
-              .position_any(|it| it.address() == op.jump_address)
-              .unwrap(),
+          let idx =             self
+          .opcodes
+          .par_iter()
+          .position_any(|it| it.address() == op.jump_address)
+          .unwrap();
+          map.insert(0, idx);
+          log::debug!(
+            "Direct jump opcode at 0x{:08X} (actual 0x{:08X}) jumps to: 0x{:04X}",
+            op.address,
+            actual_address,
+            self.opcodes[idx].address(),
           );
           jump_map.insert(op.address, map);
         }
@@ -170,18 +174,28 @@ impl Script {
             .unwrap();
           map.insert(0, thing);
           jump_map.insert(op.address, map);
+          log::debug!(
+            "Conditional jump Opcode at 0x{:08X} (actual {:08X}) jumps to: {:08X}",
+            op.address,
+            actual_address,
+            self.opcodes[thing].address()
+          );
         }
         Opcode::JZ(op) | Opcode::JNZ(op) => {
           let mut map = HashMap::new();
-          map.insert(
-            0,
-            self
-              .opcodes
-              .par_iter()
-              .position_any(|it| it.address() == op.jump_address)
-              .unwrap(),
-          );
+          let data =             self
+          .opcodes
+          .par_iter()
+          .position_any(|it| it.address() == op.jump_address)
+          .unwrap();
+          map.insert(0, data);
           jump_map.insert(op.address, map);
+          log::debug!(
+            "Conditional jump Opcode at 0x{:08X} (actual {:08X}) jumps to: {:08X}",
+            op.address,
+            actual_address,
+            self.opcodes[data].address(),
+          );
         }
         Opcode::Switch(op) => {
           let jumps = op
@@ -268,6 +282,12 @@ fn adjust_single_opcode(
     Opcode::OP_DIRECT_JUMP(mut op) => {
       let tbl_entry = &jump_table[&op.address];
       op.jump_address = opcodes[tbl_entry[&0]].actual_address();
+      log::debug!(
+        "Adjusting direct jump Opcode at 0x{:08X} (actual {:08X}) to jump to: {:08X}",
+        op.address,
+        op.actual_address,
+        op.jump_address,
+      );
       Opcode::OP_DIRECT_JUMP(op)
     }
 
@@ -279,12 +299,26 @@ fn adjust_single_opcode(
     | Opcode::JG(mut op) => {
       let tbl_entry = &jump_table[&op.address];
       op.jump_address = opcodes[tbl_entry[&0]].actual_address();
+      log::debug!(
+        "Adjusting conditional jump Opcode ({:02X}) at 0x{:08X} (actual {:08X}) to jump to: {:08X}",
+        op.opcode,
+        op.address,
+        op.actual_address,
+        op.jump_address,
+      );
       op.into()
     }
 
     Opcode::JNZ(mut op) | Opcode::JZ(mut op) => {
       let tbl_entry = &jump_table[&op.address];
       op.jump_address = opcodes[tbl_entry[&0]].actual_address();
+      log::debug!(
+        "Adjusting conditional jump Opcode ({:02X}) at 0x{:08X} (actual {:08X}) to jump to: {:08X}",
+        op.opcode,
+        op.address,
+        op.actual_address,
+        op.jump_address,
+      );
       op.into()
     }
 
@@ -298,8 +332,9 @@ fn adjust_single_opcode(
     Opcode::OP_Insert(ins_opcode) => {
       let mut res: Vec<_> = vec![];
       for opcode in ins_opcode.contents.into_iter() {
+        log::debug!("Entering insert adjustment.");
         let adjustment = adjust_single_opcode(opcode, jump_table, opcodes).unwrap();
-
+        log::debug!("Leaving insert adjustment.");
         res.push(adjustment);
       }
 

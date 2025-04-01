@@ -77,9 +77,9 @@ fn gen_size_opcode_impl(struct_name: &str, data: &DataStruct) -> Vec<proc_macro2
         {
           use encoding_rs::SHIFT_JIS;
           size += if let Some(tl) = &self.translation {
-            SHIFT_JIS.encode(tl).0.len()
+            crate::util::encode_sjis(tl).len()
           } else {
-            SHIFT_JIS.encode(&self.unicode).0.len()
+            crate::util::encode_sjis(&self.unicode).len()
           } + 1
         }
       }),

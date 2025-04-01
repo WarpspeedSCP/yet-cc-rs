@@ -54,7 +54,6 @@ where
 fn main() {
   env_logger::builder()
     .format_timestamp(None)
-    .filter_level(log::LevelFilter::Info)
     .init();
 
   let mut app = clap::Command::new("yeti")

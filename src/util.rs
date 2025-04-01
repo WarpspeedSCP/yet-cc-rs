@@ -189,8 +189,6 @@ pub fn encode_sjis(unicode: &str) -> Vec<u8> {
 
   let output: Vec<u8> = collector.into_iter().flatten().collect();
 
-  // println!("[ {} ]", output.iter().map(|chr| format!("0x{chr:02X},")).collect::<Vec<_>>().join(&" "));
-
   output
 }
 
