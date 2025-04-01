@@ -1,4 +1,5 @@
-use bimap::BiHashMap;
+use std::collections::HashMap;
+
 use once_cell::sync::Lazy;
 
 pub fn transmute_to_array<const SIZE: usize>(address: usize, input: &[u8]) -> [u8; SIZE] {
@@ -46,8 +47,8 @@ impl SJISChar {
   }
 }
 
-pub static ITALIC_MAPPING_TABLE: Lazy<BiHashMap<char, SJISChar>> = Lazy::new(|| {
-  let mut map = BiHashMap::new();
+pub static ITALIC_MAPPING_TABLE: Lazy<HashMap<char, SJISChar>> = Lazy::new(|| {
+  let mut map = HashMap::new();
 
   let file: String;
   #[cfg(debug_assertions)]
@@ -172,7 +173,7 @@ pub fn encode_sjis(unicode: &str) -> Vec<u8> {
     if in_italics {
       let mut word = vec![];
       for chr in substr.chars() {
-        let code = ITALIC_MAPPING_TABLE.get_by_left(&chr);
+        let code = ITALIC_MAPPING_TABLE.get(&chr);
         if let Some(code) = code {
           word.extend(code.to_vec().into_iter());
         } else {
