@@ -1,5 +1,6 @@
 target/
 data/
+scenario/
 **/*.yaml
 **/*.opcodescript
 **/*.bin
