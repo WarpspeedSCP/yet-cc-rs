@@ -1,6 +1,6 @@
 [package]
 name = "yeti"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2021"
 
 [dependencies]
@@ -11,12 +11,14 @@ serde = { version = "1.0.203", features = ["derive"]}
 serde_derive = "1.0.203"
 sizedop_derive = { path = "./sizedop_derive" }
 binary_serialize_derive = { path = "./binary_serialize_derive" }
+opcodelike_derive = { path = "./opcodelike_derive" }
 serde_yml = "0.0.12"
 serde_json = "1.0.140"
 clap = "4.5.8"
 walkdir = "2.5.0"
 log = "0.4.22"
 env_logger = "0.11.5"
+bitflags = "2.9.0"
 
 [profile.release]
 strip = true  # Automatically strip symbols from the binary.

@@ -1,6 +1,8 @@
+use std::mem::transmute;
 use crate::opcodescript::*;
 use crate::util::*;
 
+use bitflags::bitflags;
 use opcodes::*;
 
 impl SingleByteOpcode {
@@ -245,6 +247,21 @@ impl StringOpcode {
   }
 }
 
+impl StringOpcode2 {
+  pub fn new(address: usize, input: &[u8]) -> Self {
+    let (_, unicode) = get_sjis_bytes(address + 1 + 2, input);
+    Self {
+      address: address as u32,
+      actual_address: address as u32,
+      opcode: input[address],
+      header: transmute_to_array(address + 1, input),
+      unicode,
+      notes: None,
+      translation: None,
+    }
+  }
+}
+
 impl String47Opcode {
   pub fn new(address: usize, input: &[u8]) -> Self {
     let arg1 = transmute_to_u16(address + 1, input);
@@ -260,6 +277,24 @@ impl String47Opcode {
       } else {
         Some(transmute_to_u16(address + 3, input))
       },
+      unicode,
+      notes: None,
+      translation: None,
+    }
+  }
+}
+
+impl String55Opcode {
+  pub fn new(address: usize, input: &[u8]) -> Self {
+    let (_, unicode) = get_sjis_bytes(address + 1 + 9, input);
+    Self {
+      address: address as u32,
+      actual_address: address as u32,
+      opcode: input[address],
+      arg1: transmute_to_u16(address + 1, input),
+      padding_1: transmute_to_array(address + 3, input),
+      arg2: transmute_to_u16(address + 6, input),
+      padding_2: transmute_to_array(address + 8, input),
       unicode,
       notes: None,
       translation: None,
@@ -425,8 +460,20 @@ impl SizedOpcode for Custom77 {
   }
 }
 
+bitflags! {
+  #[derive(Copy, Clone)]
+  pub struct Quirks: u8 {
+    const CCFC      = 1;
+    const PSP       = 2;
+    const XBox      = 4;
+    const XBoxRoot  = 8;
+    const SG        = 16;
+    const SG2       = 32;
+  }
+}
+
 impl Opcode {
-  pub fn eat(address: usize, input: &[u8]) -> Result<Self, String> {
+  pub fn eat(address: usize, input: &[u8], quirks: Quirks) -> Result<Self, String> {
     match input[address] {
       // Complete each switch case with the correct variant of Opcode based on the members of opcode.
       0x00 => Ok(Self::OP_RESET(S::new(address, input))), // (S),    // reset?
@@ -448,6 +495,16 @@ impl Opcode {
       0x0C => Ok(Self::JZ(J2::new(address, input))), // (J<6>), // jz
       0x0D => Ok(Self::JNZ(J2::new(address, input))), // (J<6>), // jnz
       0x0E => Ok(Self::Switch(SS::new(address, input))), // (SS),   // switch
+
+      0x0F => {
+        if quirks.contains(Quirks::SG) {
+          Ok(Self::OP_0F_SG(S::new(address, input)))
+        } else if quirks.contains(Quirks::XBox) {
+          Ok(Self::OP_0F_XBOX(B8::new(address, input)))
+        } else {
+          panic!("Bad use of 0F without quirks. This script might be meant for Secret Garden (add the \"sg\" quirk) or an xbox 360 game (add the \"x360\" quirk).")
+        }
+      },
 
       0x10 => Ok(Self::OP_10(B4::new(address, input))), // (B<4>),
       0x11 => Ok(Self::OP_11(B4::new(address, input))), // (B<4>),
@@ -473,11 +530,20 @@ impl Opcode {
 
       0x22 => Ok(Self::OP_22(B4::new(address, input))), // (B<4>), // : 5,4
 
-      0x23 => Ok(Self::OP_23(B8::new(address, input))), // (B<8>), // : 9,
+      0x23 => {
+        if quirks.contains(Quirks::CCFC) {
+          Ok(Self::OP_23(B8::new(address, input))) // (B<8>), // : 9,
+        } else {
+          Ok(Self::OP_23_PSP(B6::new(address, input)))
+        }
+      }
 
       0x24 => Ok(Self::OP_24(B6::new(address, input))), // (B<6>), // : 7,
 
       0x25 => Ok(Self::OP_25(B4::new(address, input))), // (B<4>), // : 5,  // 26 to 2C are absent in final complete for desktop.
+      0x2A => Ok(Self::OP_2A(S::new(address, input))),
+      0x2B => Ok(Self::OP_2B(S::new(address, input))),
+      0x2C => Ok(Self::OP_2C(B2::new(address, input))),
       0x2D => Ok(Self::OP_2D(B4::new(address, input))), // (B<4>), // : 5,
 
       0x2E => Ok(Self::OP_2E(S::new(address, input))),
@@ -503,13 +569,25 @@ impl Opcode {
 
       0x42 => Ok(Self::OP_42(B8::new(address, input))), // (B<8>), // : 9,
 
-      0x43 => Ok(Self::OP_43(B4::new(address, input))), // (B<4>), // : 5,
+      0x43 => {
+        if quirks.intersects(Quirks::CCFC | Quirks::XBox | Quirks::XBoxRoot | Quirks::SG2) {
+          Ok(Self::OP_43(B4::new(address, input)))
+        } else {
+          Ok(Self::OP_43_OLDPSP(B2::new(address, input)))
+        }
+      }, // (B<4>), // : 5,
 
       0x44 => Ok(Self::OP_PLAY_VOICE(Op44Opcode::new(address, input))), // (Op44Opcode),     // : getlen_opcode44,
 
       0x45 => Ok(Self::OP_TEXTBOX_DISPLAY(ST::new(address, input))), // (ST),     // : getlen_opcode_4_plus_sz, # text
-      0x47 => Ok(Self::OP_FREE_TEXT_OR_CHARNAME(S47::new(address, input))), // (ST),     // : getlen_opcode_4_plus_sz, # charname
-
+      
+      0x47 => {
+        if quirks.intersects(Quirks::CCFC | Quirks::XBox | Quirks::XBoxRoot | Quirks::SG2) {
+          Ok(Self::OP_FREE_TEXT_OR_CHARNAME(S47::new(address, input))) // (ST),     // : getlen_opcode_4_plus_sz, # charname
+        } else {
+          Ok(Self::OP_47_TEXT(StringOpcode2::new(address, input)))
+        }
+      }
       0x48 => Ok(Self::OP_48(B2::new(address, input))), // (B<2>),     // : 3,
       0x49 => Ok(Self::OP_CLEAR_SCREEN(B4::new(address, input))), // (B<4>),     // : 5,
       0x4A => Ok(Self::OP_WAIT(B2::new(address, input))), // (B<2>),     // : 3,
@@ -517,7 +595,8 @@ impl Opcode {
       0x4C => Ok(Self::OP_4C(B6::new(address, input))), // (B<6>),     // : 7,
       0x4F => Ok(Self::OP_4F(B4::new(address, input))), // (B<4>),     // : 5,
       0x51 => Ok(Self::OP_51(B6::new(address, input))), // (B<6>), // : 7,
-
+      0x55 => Ok(Self::OP_55(String55Opcode::new(address, input))),
+      0x56 => Ok(Self::OP_56_SG2(B4::new(address, input))),
       0x59 => Ok(Self::OP_59(S::new(address, input))),
       0x5A => Ok(Self::OP_5A(S::new(address, input))),
       0x5F => Ok(Self::OP_5F(S::new(address, input))),
@@ -533,13 +612,38 @@ impl Opcode {
       0x74 => Ok(Self::OP_74(B6::new(address, input))), // (B<6>), // : 7,
       0x75 => Ok(Self::OP_75(B4::new(address, input))), // (B<4>), // : 5,
       0x77 => Ok(Self::OP_CUSTOM_TIP_77(Custom77::new(address, input))),
-      0x7B => Ok(Self::OP_7B(B4::new(address, input))), // (B<4>), // : 5,
+      0x7A => {
+        if quirks.contains(Quirks::SG2) {
+          Ok(Self::OP_7A_SG2(B6::new(address, input)))
+        } else if quirks.contains(Quirks::XBoxRoot) {
+          Ok(Self::OP_7A_ROOT_XBOX(B10::new(address, input)))
+        } else {
+          panic!("Bad use of 7A without quirks. This script might be meant for Secret Garden 2 (add the \"sg2\" quirk) or root double (add the \"rootx360\" quirk).")
+        }
+      }
+      0x7B => {
+        if quirks.contains(Quirks::XBoxRoot) {
+          Ok(Self::OP_7B_ROOT_XBOX(ST::new(address, input)))
+        } else {
+          Ok(Self::OP_7B(B4::new(address, input)))
+        }
+      }, // (B<4>), // : 5,
+      0x81 => Ok(Self::OP_81_SG2(B6::new(address, input))),
       0x82 => Ok(Self::OP_82(B2::new(address, input))), // (B<2>), // : 3, -
       0x83 => Ok(Self::OP_83(B4::new(address, input))), // (B<4>), // : 5,
-
+      0x84 => Ok(Self::OP_84_SG(B2::new(address, input))),
       0x85 => Ok(Self::OP_DEBUG_PRINT(ST::new(address, input))), // (ST), // : getlen_opcode_4_plus_sz, # ? Debug string ?
       0x86 => Ok(Self::OP_SPECIAL_TEXT(ST::new(address, input))), // (ST), // : getlen_opcode_4_plus_sz, # Special text
-
+      0x87 => {
+        log::warn!("got opcode 87 at 0x{:08X}", address);
+        Ok(Self::OP_87_ROOT_XBOX(S::new(address, input)))
+      },
+      0x8A => Ok(Self::OP_8A_ROOT_XBOX(B2::new(address, input))),
+      0x8B => Ok(Self::OP_8B_XBOX(B4::new(address, input))),
+      0x8C => Ok(Self::OP_8C_XBOX(B12::new(address, input))),
+      0x8D => Ok(Self::OP_8D_XBOX(S::new(address, input))),
+      0x8E => Ok(Self::OP_8E_ROOT_XBOX(B10::new(address, input))),
+      0x8F => Ok(Self::OP_8F_ROOT_XBOX(B6::new(address, input))),
       _ => Err(format!(
         "Opcode {:02X} not recognised at address 0x{:08X}.",
         input[address], address
@@ -548,7 +652,7 @@ impl Opcode {
   }
 
   pub fn address(&self) -> u32 {
-    crate::opcode_common_action!(self, op, { op.address }, {
+    crate::opcode_common_action!(self, op, { op.address() }, {
       op.contents.first().map(Opcode::address).unwrap_or(u32::MAX)
     })
   }
@@ -558,7 +662,7 @@ impl Opcode {
   }
 
   pub fn opcode(&self) -> u8 {
-    crate::opcode_common_action!(self, op, { op.opcode }, {
+    crate::opcode_common_action!(self, op, { op.opcode() }, {
       log::warn!(
         "Attempting to do something with an insert opcode of size {}.",
         op.size()
@@ -577,7 +681,7 @@ impl Opcode {
   }
 
   pub fn actual_address(&self) -> u32 {
-    crate::opcode_common_action!(self, op, { op.actual_address }, {
+    crate::opcode_common_action!(self, op, { op.actual_address() }, {
       op.contents
         .first()
         .map(Opcode::actual_address)
@@ -590,7 +694,7 @@ impl Opcode {
       self,
       op,
       {
-        op.actual_address = actual_address as u32;
+        op.set_actual_address(actual_address as u32);
       },
       { op.contents[0].set_actual_address(actual_address) }
     )

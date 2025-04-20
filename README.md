@@ -1,11 +1,16 @@
 ## Yeti
 
-A tool to decode and re-encode scenario files for CROSS†CHANNEL final complete (for PC).
-
+A tool to decode and re-encode scenario files for CROSS†CHANNEL final complete (for PC). Best used in conjunction with the [yeti-edit](https://github.com/WarpspeedSCP/yeti-edit) vs code extension.
 
 ### Installation
 
-This tool needs Rust, you can find instructions to install Rust here: https://rustup.rs/
+Installing the tool can be as simple as heading to the release page, downloading the latest exe file, then placing the exe file in the folder where you expect your scenario files to be.
+
+### Building
+
+If you want to build this tool, you'll need Rust. If you'd just like to use it, just head over to the releases for the latest exe. 
+
+You can find instructions to install Rust here, if you need it: https://rustup.rs/
 
 Once you're done, run the following commands on your terminal to download and compile/install this tool.
 
@@ -56,15 +61,17 @@ The custom features included in this tool, such as the use of tips, require a mo
 - **To extract a scenario file:**
 
 ```bash
-yeti decomp --input <path/to/sn.bin> --output <output/directory>
+yeti unpack --input <path/to/sn.bin> --output <output/directory> --textdir <script text directory>
 ```
 
-This will decompress, extract and disassemble all scripts from the scenario file into the output directory you specify. Replace the parts in angular brackets with values convenient to you.
+This will decompress, extract and disassemble all scripts from the scenario file into the output directory you specify. Replace the parts in angular brackets with values convenient to you. 
+
+The text script directory is the place where the text version of the scripts will be written. It's recommended to only edit the text scripts, as it is far easier to edit a text file than a yaml file.
 
 - **To recreate a scenario file:**
 
 ```bash
-yeti recomp --input <input/directory>  --output <new/sn.bin.filename> 
+yeti pack --input <input/directory>  --output <new/sn.bin.filename> --textdir <script text directory>
 ```
 
 This will take all the scripts in the input directory, assemble, combine and recompress them to create a new scenario file, then put that file where you specify in `<new/sn.bin.filename>`.

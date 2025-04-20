@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use once_cell::sync::Lazy;
+use crate::opcodescript::Opcode;
 
 pub fn transmute_to_array<const SIZE: usize>(address: usize, input: &[u8]) -> [u8; SIZE] {
   input[address..address + SIZE].try_into().unwrap()
@@ -226,6 +227,8 @@ macro_rules! opcode_common_action {
       Opcode::JNZ($op) => $action,
       Opcode::JZ($op) => $action,
       Opcode::Switch($op) => $action,
+      Opcode::OP_0F_SG($op) => $action,
+      Opcode::OP_0F_XBOX($op) => $action,
       Opcode::OP_10($op) => $action,
       Opcode::OP_11($op) => $action,
       Opcode::OP_12($op) => $action,
@@ -234,6 +237,7 @@ macro_rules! opcode_common_action {
       Opcode::OP_15($op) => $action,
       Opcode::OP_16($op) => $action,
       Opcode::OP_17($op) => $action,
+      Opcode::OP_19($op) => $action,
       Opcode::OP_1A($op) => $action,
       Opcode::OP_1B($op) => $action,
       Opcode::OP_1C($op) => $action,
@@ -244,8 +248,12 @@ macro_rules! opcode_common_action {
       Opcode::OP_21($op) => $action,
       Opcode::OP_22($op) => $action,
       Opcode::OP_23($op) => $action,
+      Opcode::OP_23_PSP($op) => $action,
       Opcode::OP_24($op) => $action,
       Opcode::OP_25($op) => $action,
+      Opcode::OP_2A($op) => $action,
+      Opcode::OP_2B($op) => $action,
+      Opcode::OP_2C($op) => $action,
       Opcode::OP_2D($op) => $action,
       Opcode::OP_2E($op) => $action,
       Opcode::OP_2F($op) => $action,
@@ -255,15 +263,18 @@ macro_rules! opcode_common_action {
       Opcode::OP_33($op) => $action,
       Opcode::OP_34($op) => $action,
       Opcode::OP_36($op) => $action,
+      Opcode::OP_37($op) => $action,
       Opcode::OP_39($op) => $action,
       Opcode::OP_3A($op) => $action,
       Opcode::OP_3B($op) => $action,
       Opcode::OP_3C($op) => $action,
       Opcode::OP_42($op) => $action,
       Opcode::OP_43($op) => $action,
+      Opcode::OP_43_OLDPSP($op) => $action,
       Opcode::OP_PLAY_VOICE($op) => $action,
       Opcode::OP_TEXTBOX_DISPLAY($op) => $action,
       Opcode::OP_FREE_TEXT_OR_CHARNAME($op) => $action,
+      Opcode::OP_47_TEXT($op) => $action,
       Opcode::OP_48($op) => $action,
       Opcode::OP_CLEAR_SCREEN($op) => $action,
       Opcode::OP_WAIT($op) => $action,
@@ -271,6 +282,8 @@ macro_rules! opcode_common_action {
       Opcode::OP_4C($op) => $action,
       Opcode::OP_4F($op) => $action,
       Opcode::OP_51($op) => $action,
+      Opcode::OP_55($op) => $action,
+      Opcode::OP_56_SG2($op) => $action,
       Opcode::OP_59($op) => $action,
       Opcode::OP_5A($op) => $action,
       Opcode::OP_5F($op) => $action,
@@ -285,11 +298,25 @@ macro_rules! opcode_common_action {
       Opcode::OP_74($op) => $action,
       Opcode::OP_75($op) => $action,
       Opcode::OP_CUSTOM_TIP_77($op) => $action,
+      Opcode::OP_79($op) => $action,
+      Opcode::OP_7A_SG2($op) => $action,
+      Opcode::OP_7A_ROOT_XBOX($op) => $action,
       Opcode::OP_7B($op) => $action,
+      Opcode::OP_7B_ROOT_XBOX($op) => $action,
+      Opcode::OP_81_SG2($op) => $action,
       Opcode::OP_82($op) => $action,
       Opcode::OP_83($op) => $action,
+      Opcode::OP_84_SG($op) => $action,
       Opcode::OP_DEBUG_PRINT($op) => $action,
       Opcode::OP_SPECIAL_TEXT($op) => $action,
+      Opcode::OP_86_PSP($op) => $action,
+      Opcode::OP_87_ROOT_XBOX($op) => $action,
+      Opcode::OP_8A_ROOT_XBOX($op) => $action,
+      Opcode::OP_8B_XBOX($op) => $action,
+      Opcode::OP_8C_XBOX($op) => $action,
+      Opcode::OP_8D_XBOX($op) => $action,
+      Opcode::OP_8E_ROOT_XBOX($op) => $action,
+      Opcode::OP_8F_ROOT_XBOX($op) => $action,
       Opcode::OP_Insert($op) => $array_action,
     }
   };
@@ -315,6 +342,20 @@ pub fn fix_string(input: &str) -> String {
   }
 
   output.trim().to_string()
+}
+
+pub fn escape_str(input: &str) -> String {
+  input
+      .replace("\\", "<bslash/>")
+      .replace("\n", "%N")
+      .replace("\"", "<dquote/>")
+}
+
+pub fn unescape_str(input: &str) -> String {
+  input
+      .replace("<bslash/>", "\\")
+      .replace("%N"       , "\n")
+      .replace("<dquote/>", "\"")
 }
 
 pub fn fix_line(line: &str) -> String {

@@ -1,4 +1,4 @@
-use crate::{util::*, Script};
+use crate::{opcodescript::Quirks, util::*, Script};
 use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -13,7 +13,7 @@ pub struct DirEntry {
   pub size: usize,
 }
 
-pub fn parse_scenario(input: &[u8]) -> BTreeMap<DirEntry, Script> {
+pub fn parse_scenario(input: &[u8], quirks: Quirks) -> BTreeMap<DirEntry, Script> {
   let max_offset = transmute_to_u32(0, input) as usize;
   let mut offset = 0;
   let mut entry_id = 0;
@@ -24,7 +24,7 @@ pub fn parse_scenario(input: &[u8]) -> BTreeMap<DirEntry, Script> {
     let entry_offset = transmute_to_u32(offset, input) as usize;
     let entry_size = transmute_to_u32(offset + 4, input) as usize;
     log::debug!("Parsing script {entry_id:04}");
-    let (script, error) = Script::new(&input[entry_offset..entry_offset + entry_size]);
+    let (script, error) = Script::new(&input[entry_offset..entry_offset + entry_size], quirks);
 
     if let Some(error) = error {
       if entry_id == 352 {

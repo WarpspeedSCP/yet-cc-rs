@@ -83,7 +83,13 @@ fn gen_size_opcode_impl(struct_name: &str, data: &DataStruct) -> Vec<proc_macro2
           }
         }
       }),
-      _ => {}
+      _ => {
+        if field_name_str.starts_with("padding") {
+          quotes.push(quote! {
+            size += self.#field_name.len(); // #field_name_str
+          }); 
+        }
+      }
     }
   }
   quotes

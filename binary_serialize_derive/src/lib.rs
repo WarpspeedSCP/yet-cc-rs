@@ -88,7 +88,13 @@ fn gen_serialize_opcode_impl(data: &DataStruct) -> Vec<proc_macro2::TokenStream>
           output.push(0u8);
         }
       }),
-      _ => {}
+      _ => {
+        if field_name_str.starts_with("padding") {
+          quotes.push(quote! {
+            output.extend(self.#field_name.iter());
+          });
+        }
+      }
     }
   }
   quotes

@@ -11,21 +11,22 @@ use serde::{Deserialize, Serialize};
 mod opcode_impl;
 mod opcodes;
 
-pub use opcodes::Opcode;
+pub use opcode_impl::Quirks;
+pub use opcodes::*;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Header {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_inline_ints_vec")]
   pub bytes: Vec<u8>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Footer {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_inline_ints_vec")]
   pub bytes: Vec<u8>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Script {
   pub header: Header,
   pub opcodes: Vec<Opcode>,
@@ -33,7 +34,7 @@ pub struct Script {
 }
 
 impl Script {
-  pub fn new(data: &[u8]) -> (Self, Option<String>) {
+  pub fn new(data: &[u8], quirks: Quirks) -> (Self, Option<String>) {
     let start = crate::util::transmute_to_u32(0, &data) as usize;
 
     let mut address = start;
@@ -52,8 +53,12 @@ impl Script {
     let mut marked_indices = HashSet::new();
 
     while address < data.len() {
-      match Opcode::eat(address, &data) {
+      if data[address] == 0x55 {
+        println!("jdflksdjfls");
+      }
+      match Opcode::eat(address, &data, quirks) {
         Ok(opcode) => {
+          
           // simple check for end.
           if opcode.opcode() == 0x05 && [0x00, 0x05].contains(&data[address + 1]) {
             at_end = true;
@@ -355,7 +360,9 @@ fn adjust_single_opcode(
 mod tests {
   use std::collections::{HashMap, HashSet};
 
-  use crate::opcodescript::Script;
+  use either::Either;
+
+use crate::opcodescript::Script;
 
   // #[test]
   // fn test_thing() {
