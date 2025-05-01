@@ -8,7 +8,7 @@ pub trait SizedOpcode {
   fn size(&self) -> usize;
 }
 
-pub trait Opcodelike : SizedOpcode + BinarySerialize {
+pub trait Opcodelike: SizedOpcode + BinarySerialize {
   fn address(&self) -> u32;
   fn opcode(&self) -> u8;
   fn actual_address(&self) -> u32;
@@ -90,7 +90,9 @@ pub trait BinarySerialize {
   fn binary_serialize(&self) -> Vec<u8>;
 }
 
-#[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike)]
+#[derive(
+  Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike,
+)]
 pub struct SingleByteOpcode {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
@@ -108,7 +110,9 @@ pub struct GenericBasicOpcode<const DATA_SIZE: usize> {
   pub size: usize,
 }
 
-#[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike)]
+#[derive(
+  Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike,
+)]
 
 pub struct BasicOpcode2 {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
@@ -121,7 +125,9 @@ pub struct BasicOpcode2 {
   pub arg1: u16,
 }
 
-#[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike)]
+#[derive(
+  Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike,
+)]
 
 pub struct BasicOpcode3 {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
@@ -136,7 +142,9 @@ pub struct BasicOpcode3 {
   pub padding: u8,
 }
 
-#[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike)]
+#[derive(
+  Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike,
+)]
 pub struct BasicOpcode4 {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
@@ -150,7 +158,9 @@ pub struct BasicOpcode4 {
   pub arg2: u16,
 }
 
-#[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike)]
+#[derive(
+  Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike,
+)]
 pub struct BasicOpcode6 {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
@@ -166,7 +176,9 @@ pub struct BasicOpcode6 {
   pub arg3: u16,
 }
 
-#[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike)]
+#[derive(
+  Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike,
+)]
 pub struct BasicOpcode8 {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
@@ -184,7 +196,9 @@ pub struct BasicOpcode8 {
   pub arg4: u16,
 }
 
-#[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike)]
+#[derive(
+  Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike,
+)]
 pub struct BasicOpcode10 {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
@@ -204,7 +218,9 @@ pub struct BasicOpcode10 {
   pub arg5: u16,
 }
 
-#[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike)]
+#[derive(
+  Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike,
+)]
 pub struct BasicOpcode12 {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
@@ -226,7 +242,9 @@ pub struct BasicOpcode12 {
   pub arg6: u16,
 }
 
-#[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike)]
+#[derive(
+  Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike,
+)]
 pub struct BasicOpcode16 {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
@@ -252,7 +270,9 @@ pub struct BasicOpcode16 {
   pub arg8: u16,
 }
 
-#[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike)]
+#[derive(
+  Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike,
+)]
 pub struct Op44Opcode {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
@@ -270,7 +290,9 @@ pub struct Op44Opcode {
   pub size: usize,
 }
 
-#[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike)]
+#[derive(
+  Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike,
+)]
 pub struct SwitchOpcode {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
@@ -300,7 +322,9 @@ impl SizedOpcode for SwitchArm {
   }
 }
 
-#[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike)]
+#[derive(
+  Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike,
+)]
 pub struct StringOpcode {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
@@ -315,7 +339,9 @@ pub struct StringOpcode {
   pub translation: Option<String>,
 }
 
-#[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike)]
+#[derive(
+  Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike,
+)]
 pub struct StringOpcode2 {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
@@ -341,7 +367,9 @@ impl From<StringOpcode> for Opcode {
   }
 }
 
-#[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike)]
+#[derive(
+  Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike,
+)]
 pub struct String47Opcode {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
@@ -358,7 +386,9 @@ pub struct String47Opcode {
   pub translation: Option<String>,
 }
 
-#[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike)]
+#[derive(
+  Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike,
+)]
 pub struct String55Opcode {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
@@ -388,7 +418,9 @@ pub struct GenericJumpOpcode<const HEADER_SIZE: usize> {
   pub size: usize,
 }
 
-#[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike)]
+#[derive(
+  Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike,
+)]
 
 pub struct JumpOpcode2 {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
@@ -403,7 +435,9 @@ pub struct JumpOpcode2 {
   pub jump_address: u32,
 }
 
-#[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike)]
+#[derive(
+  Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike,
+)]
 
 pub struct JumpOpcode4 {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
@@ -444,7 +478,19 @@ impl From<JumpOpcode4> for Opcode {
   }
 }
 
-#[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike)]
+impl From<ChoiceOpcode> for Opcode {
+  fn from(value: ChoiceOpcode) -> Self {
+    match value.opcode {
+      0x31 => Self::OP_CHOICE(value),
+      0x32 => Self::OP_MENU_CHOICE(value),
+      _ => unreachable!(),
+    }
+  }
+}
+
+#[derive(
+  Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike,
+)]
 pub struct LongJumpOpcode {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
@@ -457,7 +503,9 @@ pub struct LongJumpOpcode {
   pub jump_address: u16,
 }
 
-#[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike)]
+#[derive(
+  Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike,
+)]
 pub struct DirectJumpOpcode {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
@@ -474,13 +522,17 @@ pub struct Choice {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_inline_ints_slice")]
-  pub header: [u8; 10],
+  pub header: [u8; 6],
+  #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
+  pub jump_address: u32,
   pub unicode: String,
   pub notes: Option<String>,
   pub translation: Option<String>,
 }
 
-#[derive(Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike)]
+#[derive(
+  Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike,
+)]
 pub struct ChoiceOpcode {
   #[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
   pub address: u32,
@@ -517,7 +569,7 @@ impl SizedOpcode for InsertOpcode {
 ///
 /// Otherwise, execution will continue from the first opcode immediately after this one.
 ///
-/// Here's how:
+/// Here's how you use it:
 /// 1. Find where you want to add new opcodes.
 /// 2. Insert the opcodes you need to add using the OP_Insert structure.
 /// 3. add this opcode in front, specifying how many opcodes after this one to skip, as well as the condition level.
@@ -596,67 +648,67 @@ pub enum Opcode {
   OP_22(B4),  // : 5,
   OP_23(B8),  // : 9,
   OP_23_PSP(B6),
-  OP_24(B6),  // : 7,
-  OP_25(B4),  // : 5,  // 26 to 2C are absent in final complete for desktop.
+  OP_24(B6), // : 7,
+  OP_25(B4), // : 5,  // 26 to 2C are absent in final complete for desktop.
   // An opportunity to insert new code?
   OP_2A(S),
   OP_2B(S),
   OP_2C(B2),
-  OP_2D(B4),                     // : 5,
-  OP_2E(S),                      // : 1,
-  OP_2F(B2),                     // : 3,
-  OP_30(B10),                    // : 11,
-  OP_CHOICE(C),                  // : getlen_opcodes_31_32, # choice 0x31
-  OP_MENU_CHOICE(C),             // : getlen_opcodes_31_32, 0x32
-  OP_33(S),                      // : 1,
-  OP_34(B10),                    // : 11,
-  OP_36(B3),                     // : 4,
+  OP_2D(B4),         // : 5,
+  OP_2E(S),          // : 1,
+  OP_2F(B2),         // : 3,
+  OP_30(B10),        // : 11,
+  OP_CHOICE(C),      // : getlen_opcodes_31_32, # choice 0x31
+  OP_MENU_CHOICE(C), // : getlen_opcodes_31_32, 0x32
+  OP_33(S),          // : 1,
+  OP_34(B10),        // : 11,
+  OP_36(B3),         // : 4,
   OP_37(S),
-  OP_39(B4),                     // : 5,
-  OP_3A(B4),                     // : 5,
-  OP_3B(B2),                     // : 3,
-  OP_3C(B2),                     // : 3,
-  OP_42(B8),                     // : 9,
-  OP_43(B4),                // : 5, x360 as well.
+  OP_39(B4), // : 5,
+  OP_3A(B4), // : 5,
+  OP_3B(B2), // : 3,
+  OP_3C(B2), // : 3,
+  OP_42(B8), // : 9,
+  OP_43(B4), // : 5, x360 as well.
   OP_43_OLDPSP(B2),
   OP_PLAY_VOICE(Op44Opcode),     // : getlen_opcode44 - voice? 0x44
   OP_TEXTBOX_DISPLAY(ST),        // : getlen_opcode_4_plus_sz, # text 0x45
   OP_FREE_TEXT_OR_CHARNAME(S47), // : getlen_opcode_4_plus_sz, # charname 0x47
   OP_47_TEXT(StringOpcode2),
-  OP_48(B2),                     // : 3,
-  OP_CLEAR_SCREEN(B4),           // : 5, - clear screen 0x49
-  OP_WAIT(B2),                   // : 3, - Wait for user input 0x4A
-  OP_4B(B4),                     // : 5,
-  OP_4C(B6),                     // : 7,
-  OP_4F(B4),                     // : 5,
-  OP_51(B6),                     // : 7,
+  OP_48(B2),           // : 3,
+  OP_CLEAR_SCREEN(B4), // : 5, - clear screen 0x49
+  OP_WAIT(B2),         // : 3, - Wait for user input 0x4A
+  OP_4B(B4),           // : 5,
+  OP_4C(B6),           // : 7,
+  OP_4F(B4),           // : 5,
+  OP_51(B6),           // : 7,
   OP_55(String55Opcode),
   OP_56_SG2(B4),
-  OP_59(S),                      // : 1,
-  OP_5A(S),                      // : 1,
-  OP_5F(S),                      // : 1,
-  OP_68(B10),                    // : 11, // always comes in pairs. Start and end of something?
-  OP_69(B2),                     // : 3,
-  OP_6A(B4),                     // : 5, debug...
-  OP_6C(B16),                    // : 17,
-  OP_6E(B4),                     // : 5,
-  OP_6F(B6),                     // : 7, unused
-  OP_71(B6),                     // : 7. Skips the succeeding 5A if op 2 is not 0xFFFF.
-  OP_72(B4),                     // : 5,
-  OP_74(B6),                     // : 7,
-  OP_75(B4),                     // : 5,
-  OP_CUSTOM_TIP_77(Custom77),    // Custom Tip opcode, see readme for details. 0x77
+  OP_59(S),                   // : 1,
+  OP_5A(S),                   // : 1,
+  OP_5F(S),                   // : 1,
+  OP_68(B10),                 // : 11, // always comes in pairs. Start and end of something?
+  OP_69(B2),                  // : 3,
+  OP_6A(B4),                  // : 5, debug...
+  OP_6C(B16),                 // : 17,
+  OP_6E(B4),                  // : 5,
+  OP_6F(B6),                  // : 7, unused
+  OP_71(B6),                  // : 7. Skips the succeeding 5A if op 2 is not 0xFFFF.
+  OP_72(B4),                  // : 5,
+  OP_74(B6),                  // : 7,
+  OP_75(B4),                  // : 5,
+  OP_CUSTOM_TIP_77(Custom77), // Custom Tip opcode, see readme for details. 0x77
   OP_79(String55Opcode),
   OP_7A_SG2(B6),
   OP_7A_ROOT_XBOX(B10),
-  OP_7B(B4),                     // : 5,
+  OP_7B(B4), // : 5,
   OP_7B_ROOT_XBOX(ST),
   OP_81_SG2(B6),
-  OP_82(B2),                     // : 3, -
-  OP_83(B4),                     // : 5,
+  OP_82(B2), // : 3, -
+  OP_83(B4), // : 5,
   OP_84_SG(B2),
-  OP_DEBUG_PRINT(ST),            // : getlen_opcode_4_plus_sz, # ? Debug string ? 0x85
-  OP_SPECIAL_TEXT(ST),           // : getlen_opcode_4_plus_sz, # Special text  0x86
+  OP_DEBUG_PRINT(ST),  // : getlen_opcode_4_plus_sz, # ? Debug string ? 0x85
+  OP_SPECIAL_TEXT(ST), // : getlen_opcode_4_plus_sz, # Special text  0x86
   OP_86_PSP(B4),
   OP_87_ROOT_XBOX(S),
   OP_8A_ROOT_XBOX(B2),

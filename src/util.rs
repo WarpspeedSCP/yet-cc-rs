@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use once_cell::sync::Lazy;
-use crate::opcodescript::Opcode;
 
 pub fn transmute_to_array<const SIZE: usize>(address: usize, input: &[u8]) -> [u8; SIZE] {
   input[address..address + SIZE].try_into().unwrap()
@@ -346,16 +345,18 @@ pub fn fix_string(input: &str) -> String {
 
 pub fn escape_str(input: &str) -> String {
   input
-      .replace("\\", "<bslash/>")
-      .replace("\n", "%N")
-      .replace("\"", "<dquote/>")
+    .replace("\\", "<bslash/>")
+    .replace("\n", "%N")
+    .replace("\"", "<dquote/>")
+    .trim()
+    .to_string()
 }
 
 pub fn unescape_str(input: &str) -> String {
   input
-      .replace("<bslash/>", "\\")
-      .replace("%N"       , "\n")
-      .replace("<dquote/>", "\"")
+    .replace("<bslash/>", "\\")
+    .replace("%N", "\n")
+    .replace("<dquote/>", "\"")
 }
 
 pub fn fix_line(line: &str) -> String {

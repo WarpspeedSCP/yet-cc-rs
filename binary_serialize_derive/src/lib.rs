@@ -62,6 +62,7 @@ fn gen_serialize_opcode_impl(data: &DataStruct) -> Vec<proc_macro2::TokenStream>
             use encoding_rs::SHIFT_JIS;
             for choice in &self.choices {
               output.extend(choice.header);
+              output.extend(choice.jump_address.to_le_bytes());
               let res = if let Some(tl) = &choice.translation {
                 crate::util::encode_sjis(tl.as_str())
               } else {

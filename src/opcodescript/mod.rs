@@ -58,7 +58,6 @@ impl Script {
       }
       match Opcode::eat(address, &data, quirks) {
         Ok(opcode) => {
-          
           // simple check for end.
           if opcode.opcode() == 0x05 && [0x00, 0x05].contains(&data[address + 1]) {
             at_end = true;
@@ -224,6 +223,28 @@ impl Script {
             .collect();
           jump_map.insert(op.address, jumps);
         }
+        Opcode::OP_CHOICE(op) | Opcode::OP_MENU_CHOICE(op) => {
+          let jumps = op
+            .choices
+            .iter()
+            .enumerate()
+            .filter_map(|(idx, choice)| {
+              if choice.jump_address == 0 {
+                None
+              } else {
+                Some((
+                  idx as u16,
+                  self
+                    .opcodes
+                    .par_iter()
+                    .position_any(|it| it.address() == choice.jump_address)
+                    .unwrap(),
+                ))
+              }
+            })
+            .collect();
+          jump_map.insert(op.address, jumps);
+        }
         _ => {}
       }
       opcode.set_actual_address(actual_address);
@@ -339,6 +360,16 @@ fn adjust_single_opcode(
       }
       Opcode::Switch(op)
     }
+    Opcode::OP_CHOICE(mut op) | Opcode::OP_MENU_CHOICE(mut op) => {
+      for (idx, branch) in op.choices.iter_mut().enumerate() {
+        let tbl_entry = &jump_table[&op.address];
+        if tbl_entry.is_empty() {
+          continue;
+        }
+        branch.jump_address = opcodes[tbl_entry[&(idx as u16)]].actual_address()
+      }
+      op.into()
+    }
     Opcode::OP_Insert(ins_opcode) => {
       let mut res: Vec<_> = vec![];
       for opcode in ins_opcode.contents.into_iter() {
@@ -360,9 +391,7 @@ fn adjust_single_opcode(
 mod tests {
   use std::collections::{HashMap, HashSet};
 
-  use either::Either;
-
-use crate::opcodescript::Script;
+  use crate::opcodescript::Script;
 
   // #[test]
   // fn test_thing() {

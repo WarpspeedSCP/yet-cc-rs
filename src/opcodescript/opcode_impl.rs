@@ -1,4 +1,3 @@
-use std::mem::transmute;
 use crate::opcodescript::*;
 use crate::util::*;
 
@@ -371,8 +370,9 @@ impl Choice {
     let (_, choice_str) = get_sjis_bytes(address + 10, input);
     Choice {
       address: address as u32,
-      header: input[address..address + 10].try_into().unwrap(),
+      header: input[address..address + 6].try_into().unwrap(),
       unicode: choice_str,
+      jump_address: transmute_to_u32(address + 6, input),
       notes: None,
       translation: None,
     }
@@ -389,7 +389,7 @@ impl ChoiceOpcode {
     let mut choice_addr = 7;
     for _ in 0..n_choices {
       let choice = Choice::new(address + choice_addr, input);
-      choice_addr += choice.header.len() + encode_sjis(&choice.unicode).len() + 1;
+      choice_addr += choice.header.len() + 4 + encode_sjis(&choice.unicode).len() + 1; // +4 for the jump address.
       choices.push(choice);
     }
 
@@ -504,7 +504,7 @@ impl Opcode {
         } else {
           panic!("Bad use of 0F without quirks. This script might be meant for Secret Garden (add the \"sg\" quirk) or an xbox 360 game (add the \"x360\" quirk).")
         }
-      },
+      }
 
       0x10 => Ok(Self::OP_10(B4::new(address, input))), // (B<4>),
       0x11 => Ok(Self::OP_11(B4::new(address, input))), // (B<4>),
@@ -575,12 +575,12 @@ impl Opcode {
         } else {
           Ok(Self::OP_43_OLDPSP(B2::new(address, input)))
         }
-      }, // (B<4>), // : 5,
+      } // (B<4>), // : 5,
 
       0x44 => Ok(Self::OP_PLAY_VOICE(Op44Opcode::new(address, input))), // (Op44Opcode),     // : getlen_opcode44,
 
       0x45 => Ok(Self::OP_TEXTBOX_DISPLAY(ST::new(address, input))), // (ST),     // : getlen_opcode_4_plus_sz, # text
-      
+
       0x47 => {
         if quirks.intersects(Quirks::CCFC | Quirks::XBox | Quirks::XBoxRoot | Quirks::SG2) {
           Ok(Self::OP_FREE_TEXT_OR_CHARNAME(S47::new(address, input))) // (ST),     // : getlen_opcode_4_plus_sz, # charname
@@ -627,7 +627,7 @@ impl Opcode {
         } else {
           Ok(Self::OP_7B(B4::new(address, input)))
         }
-      }, // (B<4>), // : 5,
+      } // (B<4>), // : 5,
       0x81 => Ok(Self::OP_81_SG2(B6::new(address, input))),
       0x82 => Ok(Self::OP_82(B2::new(address, input))), // (B<2>), // : 3, -
       0x83 => Ok(Self::OP_83(B4::new(address, input))), // (B<4>), // : 5,
@@ -637,7 +637,7 @@ impl Opcode {
       0x87 => {
         log::warn!("got opcode 87 at 0x{:08X}", address);
         Ok(Self::OP_87_ROOT_XBOX(S::new(address, input)))
-      },
+      }
       0x8A => Ok(Self::OP_8A_ROOT_XBOX(B2::new(address, input))),
       0x8B => Ok(Self::OP_8B_XBOX(B4::new(address, input))),
       0x8C => Ok(Self::OP_8C_XBOX(B12::new(address, input))),

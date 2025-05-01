@@ -29,7 +29,7 @@ where
       true
     }
   };
-  
+
   use rayon::prelude::*;
   let output = if !recurse_dirs {
     input_files
@@ -52,7 +52,7 @@ where
       })
       .collect()
   };
-  
+
   output
 }
 
@@ -158,32 +158,38 @@ fn main() {
     .map(|it: &String| PathBuf::from(it))
     .or_else(|| Some(std::env::temp_dir()))
     .unwrap();
-  
+
   let text_script_dir: PathBuf = matches
-      .get_one("text_dir")
-      .map(|it: &String| PathBuf::from(it))
-      .or_else(|| Some(PathBuf::from(infiles.first().unwrap()).join("scripts")))
-      .unwrap();
+    .get_one("text_dir")
+    .map(|it: &String| PathBuf::from(it))
+    .or_else(|| Some(PathBuf::from(infiles.first().unwrap()).join("scripts")))
+    .unwrap();
 
   if in_dir && outfile.is_file() {
     eprintln!("Expected a directory for --output, got a file path.");
     return;
   }
-  
-  let infiles = infiles.into_iter().map(|it| PathBuf::from(it).canonicalize().unwrap()).collect();
+
+  let infiles = infiles
+    .into_iter()
+    .map(|it| PathBuf::from(it).canonicalize().unwrap())
+    .collect();
 
   let mut file_list = get_final_file_list(infiles, in_dir && action != "recomp", &action);
   file_list.sort();
-  
-  let mut extra_file_list = get_final_file_list(vec![ &text_script_dir ], true, &action);
-  
+
+  let mut extra_file_list = get_final_file_list(vec![&text_script_dir], true, &action);
+
   extra_file_list.sort();
-  
+
   use rayon::prelude::*;
 
-  let quirks_str = matches.get_one::<String>("quirks").map(|it| it.as_str()).unwrap_or_default();
+  let quirks_str = matches
+    .get_one::<String>("quirks")
+    .map(|it| it.as_str())
+    .unwrap_or_default();
   let mut quirks = Quirks::empty();
-  
+
   if quirks_str.contains("xbox") {
     quirks = quirks.union(Quirks::XBox);
   }
@@ -221,27 +227,39 @@ fn main() {
       let data = std::fs::read(input_file).unwrap();
 
       do_unpack_command(data, &outfile, &text_script_dir, quirks);
-      
     }
     "pack" => {
       let top_dir = file_list.first().expect(&help_text.ansi().to_string());
       do_archive_command(top_dir, &text_script_dir, &outfile, true, true);
-      
     }
     "transform" => {
       std::fs::create_dir_all(&outfile).unwrap();
       for input_script in file_list {
         let data = serde_yml::from_str(&std::fs::read_to_string(&input_script).unwrap());
         if let Ok(data) = data {
+          let out_file = outfile
+            .join(input_script.file_stem().unwrap())
+            .with_extension("txt");
+          log::debug!(
+            "Transforming {} to {}",
+            input_script.display(),
+            out_file.display()
+          );
           let output = tl_transform_script(&data);
-          std::fs::write(outfile.join(input_script.file_stem().unwrap()).with_extension("txt"), output).unwrap();
+          std::fs::write(out_file, output).unwrap();
         }
       }
     }
     "untransform" => {
       for (input_script, input_text) in file_list.iter().zip(extra_file_list.iter()) {
-        let mut data: Script = serde_yml::from_str(&std::fs::read_to_string(&input_script).unwrap()).unwrap();
+        let mut data: Script =
+          serde_yml::from_str(&std::fs::read_to_string(&input_script).unwrap()).unwrap();
         let text_str = std::fs::read_to_string(input_text).unwrap();
+        log::debug!(
+          "Applying translations from {} to {}",
+          input_text.display(),
+          input_script.display()
+        );
         tl_reverse_transform_script(&mut data, &text_str);
         std::fs::write(&input_script, script2yaml(&data)).unwrap();
       }
