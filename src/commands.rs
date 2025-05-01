@@ -350,7 +350,11 @@ pub fn tl_reverse_transform_script(script: &mut Script, tl_doc: &str) {
     if line.speaker_address != 0 {
       let speaker_op = text2addr.get_mut(&line.speaker_address);
       if let Some(Opcode::OP_FREE_TEXT_OR_CHARNAME(op)) = speaker_op {
-        op.translation = Some(line.speaker_translation);
+        op.translation = if !line.speaker_translation.trim().is_empty() {
+          Some(escape_str(&line.speaker_translation))
+        } else {
+          None
+        };
       }
     }
 
@@ -446,11 +450,13 @@ fn parse_tl_doc_line(line: &str, prefix_size: usize, is_speaker: bool) -> (u32, 
   }
   if is_speaker {
     let mut new_curr = curr;
-    while chars[new_curr] != '(' {
+    while chars[new_curr] != '(' || chars.get(new_curr + 1).unwrap_or(&'あ').is_ascii() {
       new_curr += 1;
     }
 
-    let speaker_text = (&line[(curr)..new_curr].trim()).to_string();
+    let actual_new_curr: usize = curr + chars[curr .. new_curr].iter().map(|it| it.len_utf8()).sum::<usize>();
+    assert!(line.is_char_boundary(actual_new_curr));
+    let speaker_text = (&line[(curr)..actual_new_curr].trim()).to_string();
     (address, speaker_text)
   } else {
     (address, line[curr..].to_string())
