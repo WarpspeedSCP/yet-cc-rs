@@ -4,11 +4,11 @@ A tool to decode and re-encode scenario files for CROSS†CHANNEL final complete
 
 ### Installation
 
-Installing the tool can be as simple as heading to the release page, downloading the latest exe file, then placing the exe file in the folder where you expect your scenario files to be.
+Installing the tool can be as simple as heading to the release page, downloading [the latest exe file](https://github.com/WarpspeedSCP/yet-cc-rs/releases/latest), then placing the exe file in the folder where you expect your scenario files to be.
 
 ### Building
 
-If you want to build this tool, you'll need Rust. If you'd just like to use it, just head over to the releases for the latest exe. 
+If you want to build this tool, you'll need Rust. If you'd just like to use it, just head over to the releases page for [the latest exe](https://github.com/WarpspeedSCP/yet-cc-rs/releases/latest). 
 
 You can find instructions to install Rust here, if you need it: https://rustup.rs/
 
