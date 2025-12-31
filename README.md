@@ -1,6 +1,15 @@
 ## Yeti
 
-A tool to decode and re-encode scenario files for CROSS†CHANNEL final complete (for PC). Best used in conjunction with the [yeti-edit](https://github.com/WarpspeedSCP/yeti-edit) vs code extension.
+A tool to decode and re-encode scenario files for CROSS†CHANNEL final complete (for PC), as well as a number of other yeti/regista engine games.
+
+I've tested this tool out with the following releases:
+
+- Cross channel Final Complete PC
+- Cross channel For All Ages PSVita
+- Kana Imouto PSP
+- Phantom PC (repacking doesn't work yet)
+
+<!-- Best used in conjunction with the [yeti-edit](https://github.com/WarpspeedSCP/yeti-edit) vs code extension. -->
 
 ### Installation
 
