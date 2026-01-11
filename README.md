@@ -8,6 +8,7 @@ I've tested this tool out with the following releases:
 - Cross channel For All Ages PSVita
 - Kana Imouto PSP
 - Phantom PC (repacking doesn't work yet)
+- Daitoshokan no Hitsujikai -Library Party- NS / PSVita
 
 <!-- Best used in conjunction with the [yeti-edit](https://github.com/WarpspeedSCP/yeti-edit) vs code extension. -->
 
@@ -17,9 +18,9 @@ Installing the tool can be as simple as heading to the release page, downloading
 
 ### Building
 
-If you want to build this tool, you'll need Rust. If you'd just like to use it, just head over to the releases page for [the latest exe](https://github.com/WarpspeedSCP/yet-cc-rs/releases/latest). 
+If you want to build this tool, you'll need Rust. If you'd just like to use it, just head over to the releases page for [the latest exe](https://github.com/WarpspeedSCP/yet-cc-rs/releases/latest).
 
-You can find instructions to install Rust here, if you need it: https://rustup.rs/
+You can find instructions to install Rust here, if you need it: <https://rustup.rs/>
 
 Once you're done, run the following commands on your terminal to download and compile/install this tool.
 
@@ -31,9 +32,9 @@ cargo install --path .
 
 Note that this will only work if the cargo install directory, usually `$HOME/.cargo/bin`, is in your `$PATH` env variable.
 
-You might need to modify your `.bashrc` or equivalent shell init script to get this to work. 
+You might need to modify your `.bashrc` or equivalent shell init script to get this to work.
 
-I don't know enough about how Windows does things, so if it comes to that, consider putting the compiled `yeti.exe` file (located at `target\release\yeti.exe`) somewhere accessible, or edit the path to point there (Check this post out: https://stackoverflow.com/questions/4822400/register-an-exe-so-you-can-run-it-from-any-command-line-in-windows).
+I don't know enough about how Windows does things, so if it comes to that, consider putting the compiled `yeti.exe` file (located at `target\release\yeti.exe`) somewhere accessible, or edit the path to point there (Check this post out: <https://stackoverflow.com/questions/4822400/register-an-exe-so-you-can-run-it-from-any-command-line-in-windows>).
 
 If you only want to build the tool without installing it, use the command below instead of the last line above:
 
@@ -53,7 +54,7 @@ On windows, you'd run it like this instead:
 target\release\yeti.exe
 ```
 
-These instructions are written from a Unix perspective. If your are running Windows, I suggest you install git bash from here, first: https://git-scm.com/download/win
+These instructions are written from a Unix perspective. If your are running Windows, I suggest you install git bash from here, first: <https://git-scm.com/download/win>
 
 Then, you will be able to run the commands above using the Git Bash terminal.
 
@@ -73,7 +74,7 @@ The custom features included in this tool, such as the use of tips, require a mo
 yeti unpack --input <path/to/sn.bin> --output <output/directory> --textdir <script text directory>
 ```
 
-This will decompress, extract and disassemble all scripts from the scenario file into the output directory you specify. Replace the parts in angular brackets with values convenient to you. 
+This will decompress, extract and disassemble all scripts from the scenario file into the output directory you specify. Replace the parts in angular brackets with values convenient to you.
 
 The text script directory is the place where the text version of the scripts will be written. It's recommended to only edit the text scripts, as it is far easier to edit a text file than a yaml file.
 
@@ -93,7 +94,7 @@ yeti fix --input <a/script/file.yaml> --output <fixed/script/file.yaml>
 
 This will read the input script file (say, from where you extracted the script) and output a version with corrected spacing. This is useful when lines don't look right onscreen, or to check if you need to split text across multiple text boxes.
 
-If you only need to check if you need to split a line across multiple textboxes, don't specify the output parameter. 
+If you only need to check if you need to split a line across multiple textboxes, don't specify the output parameter.
 
 ## FAQ
 
@@ -157,6 +158,7 @@ Here are a few things to keep in mind when inserting opcodes:
 4. Try to preserve the order of instructions wherever possible.
    - You will notice patterns of 4A, 6A, 49 and 4F a lot;
    - make sure any additions you make respect this order.
+
 ### How do I insert a new line into whatever I write in a text opcode?
 
 Use `%N` to add a line break in the text.
@@ -249,4 +251,3 @@ Here's how this opcode will look in use, with some added context around the use 
   arg1: 0x000D
   arg2: 0x0000
 ```
-

@@ -50,7 +50,6 @@ pub fn main_preamble(typ: &str) -> (Vec<Utf8PathBuf>, String) {
 	(out_files, quirks_string)
 }
 
-
 pub fn parse_quirks_arg(quirks_arg: &str) -> Quirks {
 	let quirks_list = quirks_arg.split(",").collect::<Vec<_>>();
 
@@ -73,6 +72,9 @@ pub fn parse_quirks_arg(quirks_arg: &str) -> Quirks {
 	}
 	if quirks_list.contains(&"sg") {
 		quirks = quirks.union(Quirks::SG);
+	}
+	if quirks_list.contains(&"lp") || quirks_list.contains(&"library-party") {
+		quirks = quirks.union(Quirks::LibraryParty);
 	}
 	if quirks.is_empty() {
 		quirks = quirks.union(Quirks::CCFC);

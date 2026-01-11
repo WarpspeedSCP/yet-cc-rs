@@ -3,19 +3,16 @@ use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use crate::scenario_pack::parse_script;
 use crate::util::{escape_str, unescape_str};
 use crate::{
-    lz77,
-    opcodescript::{
-        Choice, ChoiceOpcode, Opcode, Quirks, Script, String47Opcode, StringOpcode, StringOpcode2,
-    },
-    scenario_pack::{parse_scenario, DirEntry},
-    util::fix_line,
+	lz77,
+	opcodescript::{
+		Choice, ChoiceOpcode, Opcode, Quirks, Script, String47Opcode, StringOpcode, StringOpcode2,
+	},
+	scenario_pack::{parse_scenario, DirEntry},
+	util::fix_line,
 };
+use camino::{Utf8Path as Path, Utf8PathBuf as PathBuf};
 use once_cell::sync::Lazy;
-use std::{
-    collections::HashMap,
-    io::Read,
-};
-use camino::{ Utf8Path as Path, Utf8PathBuf as PathBuf};
+use std::{collections::HashMap, io::Read};
 
 pub fn do_archive_command(
 	top_dir: &Path,
@@ -212,7 +209,7 @@ pub fn do_decode_command(outfile: &Path, filename: &Path, quirks: Quirks) {
 	} else {
 		outfile.to_owned()
 	};
-	log::info!("writing output to {outfile}", );
+	log::info!("writing output to {outfile}",);
 	if let Some(script) = script {
 		std::fs::write(outfile, script2yaml(&script)).unwrap();
 	}
@@ -269,13 +266,14 @@ impl DocLine {
 pub fn tl_reverse_transform_script(script: &mut Script, tl_doc: &str) {
 	let mut text2addr: HashMap<u32, &mut Opcode> = HashMap::new();
 	for opcode in script.opcodes.iter_mut() {
-		if ![0x47, 0x45, 0x86, 0x31, 0x32].contains(&opcode.opcode()) {
+		if ![0x47, 0x46, 0x45, 0x86, 0x31, 0x32].contains(&opcode.opcode()) {
 			continue;
 		}
 
 		match opcode {
 			Opcode::OP_FREE_TEXT_OR_CHARNAME(_)
 			| Opcode::OP_90_PHANTOM_CHARNAME(_)
+			| Opcode::OP_46_LP_CHARNAME(_)
 			| Opcode::OP_TEXTBOX_DISPLAY(_)
 			| Opcode::OP_SPECIAL_TEXT(_)
 			| Opcode::OP_47_TEXT(_)
@@ -355,6 +353,12 @@ pub fn tl_reverse_transform_script(script: &mut Script, tl_doc: &str) {
 		if line.speaker_address != 0 {
 			let speaker_op = text2addr.get_mut(&line.speaker_address);
 			if let Some(Opcode::OP_FREE_TEXT_OR_CHARNAME(op)) = speaker_op {
+				op.translation = if !line.speaker_translation.trim().is_empty() {
+					Some(escape_str(&line.speaker_translation))
+				} else {
+					None
+				};
+			} else if let Some(Opcode::OP_46_LP_CHARNAME(op)) = speaker_op {
 				op.translation = if !line.speaker_translation.trim().is_empty() {
 					Some(escape_str(&line.speaker_translation))
 				} else {
@@ -486,13 +490,29 @@ pub fn tl_transform_script(input: &Script) -> String {
 
 	let mut curr_speaker = ("", String::default(), &0);
 	for opcode in input.opcodes.iter() {
-		if ![0x47, 0x45, 0x86, 0x31, 0x32].contains(&opcode.opcode()) {
+		if ![0x47, 0x46, 0x45, 0x86, 0x31, 0x32].contains(&opcode.opcode()) {
 			continue;
 		}
 
 		match opcode.opcode() {
 			0x90 => {
 				if let Opcode::OP_90_PHANTOM_CHARNAME(StringOpcode2 {
+					address,
+					unicode,
+					translation,
+					..
+				}) = opcode
+				{
+					let tl_text = translation
+						.as_ref()
+						.map(|it| unescape_str(it.as_str()))
+						.unwrap_or_default();
+					curr_speaker = (unicode.as_str(), tl_text, address);
+					continue;
+				}
+			}
+			0x46 => {
+				if let Opcode::OP_46_LP_CHARNAME(StringOpcode2 {
 					address,
 					unicode,
 					translation,
@@ -691,11 +711,11 @@ pub fn do_fix_command(input_file: &PathBuf, outfile: PathBuf) {
 
 #[cfg(test)]
 mod test {
-    use crate::opcodescript::Script;
+	use crate::opcodescript::Script;
 
-    use super::{tl_reverse_transform_script, tl_transform_script};
+	use super::{tl_reverse_transform_script, tl_transform_script};
 
-    #[test]
+	#[test]
 	fn test_transform() {
 		let input = ""; //include_str!("/home/wscp/cc_tl/scenario/0045.yaml");
 

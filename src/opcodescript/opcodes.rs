@@ -271,6 +271,32 @@ pub struct BasicOpcode16 {
 #[derive(
 	Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike,
 )]
+pub struct BasicOpcode14 {
+	#[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
+	pub address: u32,
+	#[serde(skip)]
+	pub actual_address: u32,
+	#[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u8")]
+	pub opcode: u8,
+	#[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u16")]
+	pub arg1: u16,
+	#[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u16")]
+	pub arg2: u16,
+	#[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u16")]
+	pub arg3: u16,
+	#[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u16")]
+	pub arg4: u16,
+	#[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u16")]
+	pub arg5: u16,
+	#[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u16")]
+	pub arg6: u16,
+	#[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u16")]
+	pub arg7: u16,
+}
+
+#[derive(
+	Clone, PartialEq, Debug, SizedOpcode, Serialize, Deserialize, BinarySerialize, Opcodelike,
+)]
 pub struct Op44Opcode {
 	#[serde(serialize_with = "crate::opcodescript::opcodes::serialize_hex_u32")]
 	pub address: u32,
@@ -594,6 +620,7 @@ pub type B6 = BasicOpcode6;
 pub type B8 = BasicOpcode8;
 pub type B10 = BasicOpcode10;
 pub type B12 = BasicOpcode12;
+pub type B14 = BasicOpcode14;
 pub type B16 = BasicOpcode16;
 
 pub type S = SingleByteOpcode;
@@ -662,17 +689,20 @@ pub enum Opcode {
 	OP_33(S),          // : 1,
 	OP_34(B10),        // : 11,
 	OP_36(B3),         // : 4,
+	OP_36_LP(B2),      // : 3,
 	OP_37(S),
-	OP_39(B4), // : 5,
-	OP_3A(B4), // : 5,
-	OP_3B(B2), // : 3,
-	OP_3C(B2), // : 3,
-	OP_42(B8), // : 9,
-	OP_43(B4), // : 5, x360 as well.
+	OP_3F_LP(B3), // : 4,
+	OP_39(B4),    // : 5,
+	OP_3A(B4),    // : 5,
+	OP_3B(B2),    // : 3,
+	OP_3C(B2),    // : 3,
+	OP_42(B8),    // : 9,
+	OP_43(B4),    // : 5, x360 as well.
 	OP_43_OLDPSP(B2),
-	OP_PLAY_VOICE(Op44Opcode),     // : getlen_opcode44 - voice? 0x44
-	OP_TEXTBOX_DISPLAY(ST),        // : getlen_opcode_4_plus_sz, # text 0x45
-	OP_FREE_TEXT_OR_CHARNAME(S47), // : getlen_opcode_4_plus_sz, # charname 0x47
+	OP_PLAY_VOICE(Op44Opcode),        // : getlen_opcode44 - voice? 0x44
+	OP_TEXTBOX_DISPLAY(ST),           // : getlen_opcode_4_plus_sz, # text 0x45
+	OP_FREE_TEXT_OR_CHARNAME(S47),    // : getlen_opcode_4_plus_sz, # charname 0x47
+	OP_46_LP_CHARNAME(StringOpcode2), // : getlen_opcode_2_plus_sz, # charname 0x46
 	OP_47_TEXT(StringOpcode2),
 	OP_48(B2),           // : 3,
 	OP_CLEAR_SCREEN(B4), // : 5, - clear screen 0x49
@@ -707,8 +737,10 @@ pub enum Opcode {
 	OP_79(String55Opcode),
 	OP_7A_SG2(B6),
 	OP_7A_ROOT_XBOX(B10),
-	OP_7B(B4), // : 5,
+	OP_7A_LP_B10(B10), // : 11,
+	OP_7B(B4),         // : 5,
 	OP_7B_ROOT_XBOX(ST),
+	OP_7D_LP(B2),
 	OP_80_PHANTOM(B4),
 	OP_81_SG2(B6),
 	OP_82(B2), // : 3, -
@@ -726,6 +758,8 @@ pub enum Opcode {
 	OP_8E_ROOT_XBOX(B10),
 	OP_8F_ROOT_XBOX(B6),
 	OP_90_PHANTOM_CHARNAME(StringOpcode2),
+	OP_92_LP(B14), // : 15,
+	OP_93_LP(B8),  // : 9,
 	OP_FF(S),
 	OP_Insert(InsertOpcode), // Use this to insert new opcodes into a script. 0xFF (not retained after compilation)
 }
