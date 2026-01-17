@@ -11,6 +11,8 @@ This tool has been tested with the following games:
 
 <!-- Best used in conjunction with the [yeti-edit](https://github.com/WarpspeedSCP/yeti-edit) vs code extension. -->
 
+Major inspiration taken from: <https://github.com/mchubby/yetireg_tools>
+
 ### Installation
 
 Installing the tool can be as simple as heading to the release page, downloading [the latest exe file](https://github.com/WarpspeedSCP/yet-cc-rs/releases/latest), then placing the exe file in the folder where you expect your scenario files to be.
