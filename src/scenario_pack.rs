@@ -61,19 +61,35 @@ pub fn parse_script(entry: &DirEntry, quirks: Quirks) -> anyhow::Result<Script> 
 
 	let data = entry.data.unwrap();
 
-	let script_res = Script::new(data, quirks);
+	let (script, error) = Script::new(data, quirks)?;
 
-	match script_res {
-		Ok((script, error)) => {
-			if let Some(error) = error {
-				if entry.name.contains("352") {
-					log::info!("Script 352 didn't parse correctly; this is expected.");
-				} else {
-					log::error!("Encountered an error while decoding entry {entry_id} of size 0x{entry_size:08X}: {error}", entry_id = entry.name, entry_size = entry.size);
-				}
-			}
-			Ok(script)
+	if let Some(error) = error {
+		let script_id = entry
+			.name
+			.split('.')
+			.next()
+			.unwrap()
+			.parse::<u32>()
+			.unwrap_or(u32::MAX);
+		let is_expected = match script_id {
+			1 | 382 => quirks.contains(Quirks::LibraryParty),
+			352 => true,
+			_ => false,
+		};
+
+		if is_expected {
+			log::info!(
+				"Script {} didn't parse correctly; this is expected.",
+				entry.name.split('.').next().unwrap()
+			);
+		} else {
+			log::error!(
+				"Encountered an error while decoding entry {} of size 0x{:08X}: {}",
+				entry.name.split('.').next().unwrap(),
+				entry.size,
+				error
+			);
 		}
-		Err(e) => Err(e),
 	}
+	Ok(script)
 }

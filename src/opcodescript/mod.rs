@@ -68,7 +68,8 @@ impl Script {
 									.last()
 									.map(|it: &Opcode| it.opcode())
 									.unwrap_or_default()
-							|| (data.len() - address) < 0x30)
+							|| (!quirks.contains(Quirks::LibraryParty)
+								&& (data.len() - address) < 0x30))
 					{
 						at_end = true;
 					}
@@ -176,6 +177,13 @@ impl Script {
 						.opcodes
 						.par_iter()
 						.position_any(|it| it.address() == op.jump_address)
+						.ok_or_else(|| {
+							anyhow!(
+								"Could not find jump target 0x{:08X} for direct jump at 0x{:08X}",
+								op.jump_address,
+								op.address
+							)
+						})
 						.unwrap();
 					map.insert(0, idx);
 					log::debug!(
@@ -197,6 +205,13 @@ impl Script {
 						.opcodes
 						.par_iter()
 						.position_any(|it| it.address() == op.jump_address)
+						.ok_or_else(|| {
+							anyhow!(
+								"Could not find jump target 0x{:08X} for conditional jump at 0x{:08X}",
+								op.jump_address,
+								op.address
+							)
+						})
 						.unwrap();
 					map.insert(0, thing);
 					jump_map.insert(op.address, map);
@@ -213,6 +228,13 @@ impl Script {
 						.opcodes
 						.par_iter()
 						.position_any(|it| it.address() == op.jump_address)
+						.ok_or_else(|| {
+							anyhow!(
+								"Could not find jump target 0x{:08X} for Z/NZ jump at 0x{:08X}",
+								op.jump_address,
+								op.address
+							)
+						})
 						.unwrap();
 					map.insert(0, data);
 					jump_map.insert(op.address, map);
@@ -233,6 +255,13 @@ impl Script {
 								self.opcodes
 									.par_iter()
 									.position_any(|it| it.address() == arm.jump_address)
+									.ok_or_else(|| {
+										anyhow!(
+											"Could not find jump target 0x{:08X} for switch arm at 0x{:08X}",
+											arm.jump_address,
+											op.address
+										)
+									})
 									.unwrap(),
 							)
 						})
@@ -253,6 +282,14 @@ impl Script {
 									self.opcodes
 										.par_iter()
 										.position_any(|it| it.address() == choice.jump_address)
+										.ok_or_else(|| {
+											anyhow!(
+												"Could not find jump target 0x{:08X} for choice {} at 0x{:08X}",
+												choice.jump_address,
+												idx,
+												op.address
+											)
+										})
 										.unwrap(),
 								))
 							}
@@ -414,11 +451,11 @@ fn adjust_single_opcode(
 
 #[cfg(test)]
 mod tests {
-    use std::collections::{HashMap, HashSet};
+	use std::collections::{HashMap, HashSet};
 
-    use crate::opcodescript::Script;
+	use crate::opcodescript::Script;
 
-    // #[test]
+	// #[test]
 	// fn test_thing() {
 	//   let thing = include_bytes!("../../scenario/0045.yaml");
 

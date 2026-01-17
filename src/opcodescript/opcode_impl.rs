@@ -158,6 +158,30 @@ impl BasicOpcode12 {
 	}
 }
 
+impl BasicOpcode14 {
+	pub fn new(address: usize, input: &[u8]) -> Result<Self> {
+		let GenericBasicOpcode {
+			address,
+			opcode,
+			data,
+			..
+		} = GenericBasicOpcode::<14>::new(address, input)?;
+		Self {
+			address: address as u32,
+			actual_address: address as u32,
+			opcode,
+			arg1: transmute_to_u16(0, &data)?,
+			arg2: transmute_to_u16(2, &data)?,
+			arg3: transmute_to_u16(4, &data)?,
+			arg4: transmute_to_u16(6, &data)?,
+			arg5: transmute_to_u16(8, &data)?,
+			arg6: transmute_to_u16(10, &data)?,
+			arg7: transmute_to_u16(12, &data)?,
+		}
+		.wrap_ok()
+	}
+}
+
 impl BasicOpcode16 {
 	pub fn new(address: usize, input: &[u8]) -> Result<Self> {
 		let GenericBasicOpcode {
@@ -502,7 +526,7 @@ impl SizedOpcode for Custom77 {
 }
 
 bitflags! {
-  #[derive(Copy, Clone, Debug)]
+  #[derive(Copy, Clone, Debug, PartialEq, Eq)]
   pub struct Quirks: u8 {
 	const CCFC      = 1;
 	const PSP       = 2;
@@ -511,15 +535,25 @@ bitflags! {
 	const SG        = 16;
 	const SG2       = 32;
 	const Phantom   = 64;
+	const LibraryParty = 128;
   }
 }
 
 impl Quirks {
 	pub fn names() -> Vec<String> {
-		["CCFC", "PSP", "XBox", "XBoxRoot", "SG", "SG2", "Phantom"]
-			.into_iter()
-			.map(|it| it.to_lowercase())
-			.collect()
+		[
+			"CCFC",
+			"PSP",
+			"XBox",
+			"XBoxRoot",
+			"SG",
+			"SG2",
+			"Phantom",
+			"LibraryParty",
+		]
+		.into_iter()
+		.map(|it| it.to_lowercase())
+		.collect()
 	}
 }
 
@@ -616,9 +650,22 @@ impl Opcode {
 
 			0x34 => Ok(Self::OP_34(B10::new(address, input)?)), // (B<10>), // : 11,
 
-			0x36 => Ok(Self::OP_36(B3::new(address, input)?)), // (B<3>),  // : 4,
+			0x36 => {
+				if quirks.contains(Quirks::LibraryParty) {
+					Ok(Self::OP_36_LP(B2::new(address, input)?))
+				} else {
+					Ok(Self::OP_36(B3::new(address, input)?)) // (B<3>),  // : 4,
+				}
+			}
 
 			0x37 => Ok(Self::OP_37(S::new(address, input)?)), // : 1
+			0x3F => {
+				if quirks.contains(Quirks::LibraryParty) {
+					Ok(Self::OP_3F_LP(B3::new(address, input)?))
+				} else {
+					Err(anyhow!("Bad use of 3F without quirks at address 0x{address:08X}. This script might be meant for Library Party (add the \"lp\" quirk)."))
+				}
+			}
 
 			0x39 => Ok(Self::OP_39(B4::new(address, input)?)), // (B<4>),  // : 5,
 			0x3A => Ok(Self::OP_3A(B4::new(address, input)?)), // (B<4>),  // : 5,
@@ -629,7 +676,11 @@ impl Opcode {
 			0x42 => Ok(Self::OP_42(B8::new(address, input)?)), // (B<8>), // : 9,
 
 			0x43 => {
-				if quirks.intersects(Quirks::CCFC | Quirks::XBox | Quirks::XBoxRoot | Quirks::SG2) {
+				if quirks.intersects(
+					Quirks::CCFC
+						| Quirks::XBox | Quirks::XBoxRoot
+						| Quirks::SG2 | Quirks::LibraryParty,
+				) {
 					Ok(Self::OP_43(B4::new(address, input)?))
 				} else {
 					Ok(Self::OP_43_OLDPSP(B2::new(address, input)?))
@@ -640,6 +691,15 @@ impl Opcode {
 
 			0x45 => Ok(Self::OP_TEXTBOX_DISPLAY(ST::new(address, input)?)), // (ST),     // : getlen_opcode_4_plus_sz, # text
 
+			0x46 => {
+				if quirks.contains(Quirks::LibraryParty) {
+					Ok(Self::OP_46_LP_CHARNAME(StringOpcode2::new(address, input)?))
+				} else {
+					Err(anyhow!(
+						"Bad use of 46 without quirks at address 0x{address:08X}. This script might be meant for Library Party (add the \"lp\" quirk)."
+					))
+				}
+			}
 			0x47 => {
 				if quirks.intersects(Quirks::CCFC | Quirks::XBox | Quirks::XBoxRoot | Quirks::SG2) {
 					Ok(Self::OP_FREE_TEXT_OR_CHARNAME(S47::new(address, input)?))
@@ -687,8 +747,10 @@ impl Opcode {
 					Ok(Self::OP_7A_SG2(B6::new(address, input)?))
 				} else if quirks.contains(Quirks::XBoxRoot) {
 					Ok(Self::OP_7A_ROOT_XBOX(B10::new(address, input)?))
+				} else if quirks.contains(Quirks::LibraryParty) {
+					Ok(Self::OP_7A_LP_B10(B10::new(address, input)?))
 				} else {
-					Err(anyhow!("Bad use of 7A without quirks at address 0x{address:08X}. This script might be meant for Secret Garden 2 (add the \"sg2\" quirk) or root double (add the \"rootx360\" quirk)."))
+					Err(anyhow!("Bad use of 7A without quirks at address 0x{address:08X}. This script might be meant for Secret Garden 2 (add the \"sg2\" quirk) or root double (add the \"rootx360\" quirk) or Library Party (add the \"lp\" quirk)."))
 				}
 			}
 			0x7B => {
@@ -698,6 +760,13 @@ impl Opcode {
 					Ok(Self::OP_7B(B4::new(address, input)?))
 				}
 			} // (B<4>), // : 5,
+			0x7D => {
+				if quirks.contains(Quirks::LibraryParty) {
+					Ok(Self::OP_7D_LP(B2::new(address, input)?))
+				} else {
+					Err(anyhow!("Bad use of 7D without quirks at address 0x{address:08X}. This script might be meant for Library Party (add the \"lp\" quirk)."))
+				}
+			}
 			0x80 => Ok(Self::OP_80_PHANTOM(B4::new(address, input)?)),
 			0x81 => Ok(Self::OP_81_SG2(B6::new(address, input)?)),
 			0x82 => Ok(Self::OP_82(B2::new(address, input)?)), // (B<2>), // : 3, -
@@ -724,6 +793,20 @@ impl Opcode {
 			0x90 => Ok(Self::OP_90_PHANTOM_CHARNAME(StringOpcode2::new(
 				address, input,
 			)?)),
+			0x92 => {
+				if quirks.contains(Quirks::LibraryParty) {
+					Ok(Self::OP_92_LP(B14::new(address, input)?))
+				} else {
+					Err(anyhow!("Bad use of 92 without quirks at address 0x{address:08X}. This script might be meant for Library Party (add the \"lp\" quirk)."))
+				}
+			}
+			0x93 => {
+				if quirks.contains(Quirks::LibraryParty) {
+					Ok(Self::OP_93_LP(B8::new(address, input)?))
+				} else {
+					Err(anyhow!("Bad use of 93 without quirks at address 0x{address:08X}. This script might be meant for Library Party (add the \"lp\" quirk)."))
+				}
+			}
 			0xFF => Ok(Self::OP_FF(S::new(address, input)?)),
 			_ => Err(anyhow::Error::new(YetiError::ParseOpcode {
 				opcode: input[address],
