@@ -2,8 +2,7 @@
 
 A tool to decode and re-encode scenario files for CROSS†CHANNEL final complete (for PC), as well as a number of other yeti/regista engine games.
 
-I've tested this tool out with the following releases:
-
+This tool has been tested with the following games:
 - Cross channel Final Complete PC
 - Cross channel For All Ages PSVita
 - Kana Imouto PSP
