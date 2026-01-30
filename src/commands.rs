@@ -31,7 +31,10 @@ pub fn do_archive_command(
 		.map(|DirEntry { name, .. }| {
 			let path = top_dir.join(&name);
 			log::debug!("Opening {path}");
-			let mut script: Script = serde_yml::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+			let content =
+				std::fs::read(&path).unwrap_or_else(|e| panic!("Failed to read file {path}: {e}"));
+			let mut script: Script = serde_yml::from_slice(&content)
+				.unwrap_or_else(|e| panic!("Failed to parse YAML in {path}: {e}"));
 			if apply_text {
 				let text_path = text_script_dir.join(name).with_extension("txt");
 				let text = std::fs::read_to_string(text_path).unwrap_or_default();
