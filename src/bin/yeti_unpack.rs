@@ -1,4 +1,3 @@
-use camino::{Utf8Path, Utf8PathBuf};
 use yeti::{main_preamble, parse_quirks_arg};
 use yeti::opcodescript::Quirks;
 use yeti::util::{current_dir, safe_create_dir};

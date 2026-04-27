@@ -3,6 +3,15 @@ name = "yeti"
 version = "1.1.1"
 edition = "2021"
 
+[[bin]]
+name = "yeti_pack"
+path = "src/bin/yeti_pack.rs"
+
+[[bin]]
+name = "yeti_unpack"
+path = "src/bin/yeti_unpack.rs"
+
+
 [lib]
 name = "yeti"
 
