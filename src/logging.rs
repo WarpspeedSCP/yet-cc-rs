@@ -4,11 +4,18 @@ use std::io::Write;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
+#[derive(Debug)]
 enum LogOutput {
 	None,
 	Stdout,
 	Stderr,
 	File(Arc<Mutex<std::io::BufWriter<std::fs::File>>>),
+}
+
+impl LogOutput {
+	fn is_none(&self) -> bool {
+		matches!(self, LogOutput::None)
+	}
 }
 
 struct SimpleLogger {
@@ -112,7 +119,7 @@ impl log::Log for SimpleLogger {
 impl SimpleLogger {
 	pub fn from_env() -> Box<Self> {
 		let matching_level =
-			log::Level::from_str(&env::var("RUST_LOG").unwrap_or("info".to_owned()))
+			log::Level::from_str(&env::var("RUST_LOG").unwrap_or("INFO".to_owned()))
 				.unwrap_or(Level::Info);
 
 		let log_output_str = env::var("LOG_OUTPUT")
@@ -130,7 +137,7 @@ impl SimpleLogger {
 
 		if log_output_str.is_empty() {
 			for (idx, output) in output_buffers.iter_mut().enumerate() {
-				if idx <= matching_level as usize {
+				if idx <= matching_level as usize && output.is_none() {
 					let _ = std::mem::replace(output, LogOutput::Stderr);
 				}
 			}

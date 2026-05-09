@@ -545,11 +545,11 @@ impl Quirks {
 			"CCFC",
 			"PSP",
 			"XBox",
-			"XBoxRoot",
+			"xbox-root2 / xbr2",
 			"SG",
 			"SG2",
-			"Phantom",
-			"LibraryParty",
+			"Phantom / ph",
+			"library-party / lp",
 		]
 		.into_iter()
 		.map(|it| it.to_lowercase())

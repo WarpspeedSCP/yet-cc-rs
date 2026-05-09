@@ -55,16 +55,19 @@ pub fn parse_quirks_arg(quirks_arg: &str) -> Quirks {
 
 	let mut quirks = Quirks::empty();
 
+	if quirks_list.contains(&"ccfc") {
+		quirks = quirks.union(Quirks::CCFC);
+	}
 	if quirks_list.contains(&"xbox") {
 		quirks = quirks.union(Quirks::XBox);
 	}
-	if quirks_list.contains(&"xbox-root2") {
+	if quirks_list.contains(&"xbox-root2") || quirks_list.contains(&"xbr2") {
 		quirks = quirks.union(Quirks::XBoxRoot);
 	}
 	if quirks_list.contains(&"psp") {
 		quirks = quirks.union(Quirks::PSP);
 	}
-	if quirks_list.contains(&"phantom") {
+	if quirks_list.contains(&"ph") || quirks_list.contains(&"phantom") {
 		quirks = quirks.union(Quirks::Phantom);
 	}
 	if quirks_list.contains(&"sg2") {

@@ -18,7 +18,7 @@ Options:
 		std::process::exit(0);
 	}
 	
-	let (files, quirks) = main_preamble(&"sn.bin");
+	let (files, quirks) = main_preamble(&"");
 	let top_out_path = &current_dir().join("extracted_scenario");
 	safe_create_dir(&top_out_path).unwrap();
 
