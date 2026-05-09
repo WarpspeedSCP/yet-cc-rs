@@ -5,7 +5,6 @@
 use std::collections::{HashMap, HashSet};
 
 use anyhow::{anyhow, Error, Result};
-use opcodes::{BinarySerialize, Custom77, InsertOpcode};
 use rayon::prelude::{IndexedParallelIterator, IntoParallelRefIterator};
 use serde::{Deserialize, Serialize};
 
@@ -156,13 +155,75 @@ impl Script {
 		(script, encountered_error).wrap_ok()
 	}
 
-	pub fn binary_serialize(&self) -> Vec<u8> {
+	pub fn binary_serialize(&self) -> Result<Vec<u8>> {
 		let mut output = vec![];
 		let mut opcodes = self.opcodes.clone();
 		output.extend(&self.header.bytes);
 
 		// get jump addresses for everything first.
+		let jump_map = self.populate_jump_map(&mut opcodes)?;
+
+		for opcode in opcodes.iter().cloned() {
+			let opcode = match adjust_single_opcode(opcode, &jump_map, &opcodes) {
+				Some(value) => value,
+				None => continue, // means we've got a bad opcode.
+			};
+
+			let serialised = match &opcode {
+				Opcode::OP_Insert(insert) => {
+					let mut contents = Vec::new();
+					for (idx, opcode) in insert.contents.iter().enumerate() {
+						if let Opcode::OP_CUSTOM_TIP_77(custom) = opcode {
+							let mut serialised = custom.binary_serialize();
+							let mut offset: u16 = 4;
+							for i in 1..(custom.skip + 1) {
+								let target_addr = idx + i as usize;
+								let curr_opcode = insert.contents.get(target_addr).cloned().ok_or_else(|| {
+									anyhow!(
+										"Can't skip opcode at index {:08X}; there are only {} elements in the inserted block.",
+										target_addr as u32,
+										insert.contents.len()
+									)
+								})?;
+								let curr_offset = curr_opcode.size();
+								offset += curr_offset as u16;
+							}
+
+							log::info!(
+                "Encoding skip of 0x{offset:04X} bytes; equivalent to {} instructions.",
+                custom.skip
+              );
+
+							let offset_bytes = offset.to_le_bytes();
+							serialised[2..].copy_from_slice(&offset_bytes);
+
+							log::info!(
+								"Generated tip opcode: {:02X} {:02X} {:02X} {:02X}",
+								serialised[0],
+								serialised[1],
+								serialised[2],
+								serialised[3]
+							);
+							contents.extend(serialised);
+						} else {
+							contents.extend(opcode.binary_serialize());
+						}
+					}
+					contents
+				}
+				_ => opcode.binary_serialize(),
+			};
+
+			output.extend(serialised);
+		}
+		output.extend(&self.footer.bytes);
+
+		Ok(output)
+	}
+
+	fn populate_jump_map(&self, opcodes: &mut Vec<Opcode>) -> Result<HashMap<u32, HashMap<u16, usize>>> {
 		let mut jump_map: HashMap<u32, HashMap<u16, usize>> = HashMap::new();
+
 		let mut actual_address = self
 			.opcodes
 			.first()
@@ -183,8 +244,7 @@ impl Script {
 								op.jump_address,
 								op.address
 							)
-						})
-						.unwrap();
+						})?;
 					map.insert(0, idx);
 					log::debug!(
 						"Direct jump opcode at 0x{:08X} (actual 0x{:08X}) jumps to: 0x{:04X}",
@@ -211,8 +271,7 @@ impl Script {
 								op.jump_address,
 								op.address
 							)
-						})
-						.unwrap();
+						})?;
 					map.insert(0, thing);
 					jump_map.insert(op.address, map);
 					log::debug!(
@@ -234,8 +293,7 @@ impl Script {
 								op.jump_address,
 								op.address
 							)
-						})
-						.unwrap();
+						})?;
 					map.insert(0, data);
 					jump_map.insert(op.address, map);
 					log::debug!(
@@ -246,55 +304,46 @@ impl Script {
 					);
 				}
 				Opcode::Switch(op) => {
-					let jumps = op
-						.arms
-						.iter()
-						.map(|arm| {
-							(
-								arm.index,
-								self.opcodes
-									.par_iter()
-									.position_any(|it| it.address() == arm.jump_address)
-									.ok_or_else(|| {
-										anyhow!(
-											"Could not find jump target 0x{:08X} for switch arm at 0x{:08X}",
-											arm.jump_address,
-											op.address
-										)
-									})
-									.unwrap(),
-							)
-						})
-						.collect();
+					let mut jumps = HashMap::<u16, usize>::new();
+					for arm in op.arms.iter() {
+						let opcode = self.opcodes
+							.par_iter()
+							.position_any(|it| it.address() == arm.jump_address)
+							.ok_or_else(|| {
+								anyhow!(
+									"Could not find jump target 0x{:08X} for switch arm at 0x{:08X}",
+									arm.jump_address,
+									op.address
+								)
+							})?;
+
+						jumps.insert(arm.index, opcode);
+					}
+
 					jump_map.insert(op.address, jumps);
 				}
 				Opcode::OP_CHOICE(op) | Opcode::OP_MENU_CHOICE(op) => {
-					let jumps = op
-						.choices
-						.iter()
-						.enumerate()
-						.filter_map(|(idx, choice)| {
-							if choice.jump_address == 0 {
-								None
-							} else {
-								Some((
-									idx as u16,
-									self.opcodes
-										.par_iter()
-										.position_any(|it| it.address() == choice.jump_address)
-										.ok_or_else(|| {
-											anyhow!(
-												"Could not find jump target 0x{:08X} for choice {} at 0x{:08X}",
-												choice.jump_address,
-												idx,
-												op.address
-											)
-										})
-										.unwrap(),
-								))
-							}
-						})
-						.collect();
+					let mut jumps = HashMap::<u16, usize>::new();
+
+					for (idx, choice) in op.choices.iter().enumerate() {
+						if choice.jump_address == 0 {
+							continue
+						} else {
+							let target = self.opcodes
+								.par_iter()
+								.position_any(|it| it.address() == choice.jump_address)
+								.ok_or_else(|| {
+									anyhow!(
+										"Could not find jump target 0x{:08X} for choice {} at 0x{:08X}",
+										choice.jump_address,
+										idx,
+										op.address
+									)
+								})?;
+							jumps.insert(idx as u16, target);
+						}
+					}
+
 					jump_map.insert(op.address, jumps);
 				}
 				_ => {}
@@ -303,57 +352,7 @@ impl Script {
 			actual_address += opcode.size();
 		}
 
-		for opcode in opcodes.iter().cloned() {
-			let opcode = match adjust_single_opcode(opcode, &jump_map, &opcodes) {
-				Some(value) => value,
-				None => continue, // means we've got a bad opcode.
-			};
-
-			let serialized = match &opcode {
-				Opcode::OP_Insert(insert) => {
-					let mut contents = Vec::new();
-					for (idx, opcode) in insert.contents.iter().enumerate() {
-						if let Opcode::OP_CUSTOM_TIP_77(custom) = opcode {
-							let mut serialized = custom.binary_serialize();
-							let mut offset: u16 = 4;
-							for i in 1..(custom.skip + 1) {
-								let curr_opcode =
-									insert.contents.get(idx + i as usize).cloned().unwrap();
-								let curr_offset = curr_opcode.size();
-								offset += curr_offset as u16;
-							}
-
-							log::info!(
-                "Encoding skip of 0x{offset:04X} bytes; equivalent to {} instructions.",
-                custom.skip
-              );
-
-							let offset_bytes = offset.to_le_bytes();
-							serialized[2..].copy_from_slice(&offset_bytes);
-
-							log::info!(
-								"Generated tip opcode: {:02X} {:02X} {:02X} {:02X}",
-								serialized[0],
-								serialized[1],
-								serialized[2],
-								serialized[3]
-							);
-							contents.extend(serialized);
-						} else {
-							contents.extend(opcode.binary_serialize());
-						}
-					}
-					contents
-				}
-				_ => opcode.binary_serialize(),
-			};
-
-			actual_address += serialized.len();
-			output.extend(serialized);
-		}
-		output.extend(&self.footer.bytes);
-
-		output
+		Ok(jump_map)
 	}
 }
 

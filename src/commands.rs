@@ -1,5 +1,3 @@
-use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-
 use crate::scenario_pack::parse_script;
 use crate::util::{escape_str, unescape_str};
 use crate::{
@@ -10,9 +8,13 @@ use crate::{
 	scenario_pack::{parse_scenario, DirEntry},
 	util::fix_line,
 };
+
+use anyhow::{Context, Error, Result};
 use camino::{Utf8Path as Path, Utf8PathBuf as PathBuf};
 use once_cell::sync::Lazy;
+use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use std::{collections::HashMap, io::Read};
+use crate::opcodescript::String55Opcode;
 
 pub fn do_archive_command(
 	top_dir: &Path,
@@ -20,9 +22,9 @@ pub fn do_archive_command(
 	outfile: &Path,
 	compress: bool,
 	apply_text: bool,
-) {
-	let data = std::fs::read_to_string(&top_dir.join("directory.yaml")).unwrap();
-	let directory: Vec<DirEntry> = serde_yml::from_str(&data).unwrap();
+) -> Result<()> {
+	let data = std::fs::read_to_string(&top_dir.join("directory.yaml"))?;
+	let directory: Vec<DirEntry> = serde_yml::from_str(&data)?;
 
 	let scripts: Vec<(String, Script)> = directory
 		.into_par_iter()
@@ -41,19 +43,19 @@ pub fn do_archive_command(
 
 	let n_scripts = scripts.len();
 
-	let (directory, scripts_concat, scripts) = recompile_scripts(scripts, n_scripts);
+	let (directory, scripts_concat, scripts) = recompile_scripts(scripts, n_scripts)?;
 
 	if outfile.to_string().ends_with('/') {
-		std::fs::create_dir_all(&outfile).unwrap();
-		for (path, script) in scripts {
+		std::fs::create_dir_all(&outfile)?;
+		Ok(for (path, script) in scripts {
 			let newpath = path
 				.rsplit_once('/')
 				.unwrap()
 				.1
 				.replace("yaml", "opcodescript");
 			let newpath = outfile.join(newpath);
-			std::fs::write(newpath, script).unwrap();
-		}
+			std::fs::write(newpath, script)?;
+		})
 	} else {
 		let result: Vec<u8> = directory
 			.chain(scripts_concat.as_slice())
@@ -67,25 +69,26 @@ pub fn do_archive_command(
 			result
 		};
 
-		std::fs::write(outfile, compressed).unwrap();
+		std::fs::write(outfile, compressed)?;
+		Ok(())
 	}
 }
 
 fn recompile_scripts(
 	scripts: Vec<(String, Script)>,
 	n_scripts: usize,
-) -> (Vec<u8>, Vec<u8>, Vec<(String, Vec<u8>)>) {
+) -> Result<(Vec<u8>, Vec<u8>, Vec<(String, Vec<u8>)>)> {
 	let (_, directory, scripts_concat, scripts) = scripts
 		.into_iter()
 		.map(|(path, it)| {
 			log::debug!("Serializing {path}.");
 			let serialized = it.binary_serialize();
-			(serialized.len(), path, serialized)
+			serialized.map(|it| (it.len(), path, it))
 		})
-		.fold(
+		.try_fold(
 			(16 * n_scripts, vec![], vec![], vec![]),
-			|(script_start, mut directory, mut scripts_concat, mut scripts),
-			 (this_script_len, path, this_script)| {
+			|(script_start, mut directory, mut scripts_concat, mut scripts), curr_script_data| {
+				let (this_script_len, path, this_script) = curr_script_data?;
 				directory.extend((script_start as u32).to_le_bytes());
 				directory.extend((this_script_len as u32).to_le_bytes());
 				directory.extend([0u8; 8].into_iter());
@@ -93,18 +96,19 @@ fn recompile_scripts(
 				scripts.push((path, this_script.clone()));
 				scripts_concat.extend(this_script);
 
-				(
+				Ok::<(usize, Vec<u8>, Vec<u8>, Vec<(std::string::String, Vec<u8>)>), Error>((
 					script_start + this_script_len,
 					directory,
 					scripts_concat,
 					scripts,
-				)
+				))
 			},
-		);
-	(directory, scripts_concat, scripts)
+		)?;
+
+	Ok((directory, scripts_concat, scripts))
 }
 
-pub fn do_extract_command(data: Vec<u8>, outfile: &PathBuf, quirks: Quirks) {
+pub fn do_extract_command(data: Vec<u8>, outfile: &PathBuf, quirks: Quirks) -> Result<()> {
 	let decompressed_data = lz77::lz77_decompress(&data);
 
 	let script_entries = parse_scenario(&decompressed_data);
@@ -112,28 +116,30 @@ pub fn do_extract_command(data: Vec<u8>, outfile: &PathBuf, quirks: Quirks) {
 	log::info!("Scenario file is parsed.");
 	log::info!("Writing decoded scripts to directory {outfile}");
 
-	std::fs::create_dir_all(outfile).unwrap();
+	std::fs::create_dir_all(outfile)?;
 
 	std::fs::write(
 		&outfile.join("directory.yaml"),
-		serde_yml::to_string(&script_entries).unwrap(),
-	)
-	.unwrap();
+		serde_yml::to_string(&script_entries)?,
+	)?;
 
-	script_entries.into_par_iter().for_each(|entry| {
-		let res = parse_script(&entry, quirks).and_then(|script| {
+	let results = script_entries.into_par_iter().map(|entry| {
+		parse_script(&entry, quirks).and_then(|script| {
 			let script_yaml = script2yaml(&script);
 			std::fs::write(
 				&outfile.join(&entry.name).with_extension("yaml"),
 				script_yaml,
-			)
-			.map_err(anyhow::Error::new)
-		});
+			).with_context(|| format!("Encountered an error when writing {}", entry.name))
+		})
+	});
 
+	results.for_each(|res| {
 		if let Err(e) = res {
-			log::error!("Encountered an error when writing {}: {}", entry.name, e);
+			log::error!("{}", e);
 		}
 	});
+
+	Ok(())
 }
 
 pub fn do_unpack_command(data: Vec<u8>, outfolder: &Path, scriptfolder: &Path, quirks: Quirks) {
@@ -195,7 +201,10 @@ pub fn do_reencode_command(outfile: &Path, filename: &Path) {
 	let script =
 		serde_yml::from_str::<Script>(&std::fs::read_to_string(&filename).unwrap()).unwrap();
 	log::info!("Serializing {outfile}.");
-	std::fs::write(outfile, script.binary_serialize()).unwrap();
+	std::fs::write(
+		&outfile,
+		script.binary_serialize().expect(&format!("Couldn't serialise script {outfile}"))
+	).unwrap();
 }
 
 pub fn do_decode_command(outfile: &Path, filename: &Path, quirks: Quirks) {
@@ -290,7 +299,10 @@ pub fn tl_reverse_transform_script(script: &mut Script, tl_doc: &str) {
 
 	let mut line_state = LineState::Nothing;
 	for line in tl_doc.lines() {
-		if line.starts_with("[speaker @ 0x") {
+		if line.starts_with("[scene title @ 0x") {
+			let (address, _) = parse_tl_doc_line(&line, 19, false);
+			curr_line.address = address;
+		} else if line.starts_with("[speaker @ 0x") {
 			let (speaker_address, speaker_text) = parse_tl_doc_line(&line, 13, true);
 
 			curr_line.speaker_address = speaker_address;
@@ -423,6 +435,18 @@ pub fn tl_reverse_transform_script(script: &mut Script, tl_doc: &str) {
 					None
 				};
 			}
+			Some(Opcode::OP_55_SCENE_TITLE(op)) => {
+				op.translation = if !line.translation.trim().is_empty() {
+					Some(escape_str(&line.translation))
+				} else {
+					None
+				};
+				op.notes = if !line.notes.trim().is_empty() {
+					Some(escape_str(&line.notes))
+				} else {
+					None
+				};
+			}
 			Some(Opcode::OP_CHOICE(op)) | Some(Opcode::OP_MENU_CHOICE(op)) => {
 				for (choice, c_tl, c_note) in op
 					.choices
@@ -490,11 +514,28 @@ pub fn tl_transform_script(input: &Script) -> String {
 
 	let mut curr_speaker = ("", String::default(), &0);
 	for opcode in input.opcodes.iter() {
-		if ![0x47, 0x46, 0x45, 0x86, 0x31, 0x32].contains(&opcode.opcode()) {
+		if ![0x47, 0x46, 0x45, 0x86, 0x31, 0x32, 0x55].contains(&opcode.opcode()) {
 			continue;
 		}
 
 		match opcode.opcode() {
+			0x55 => {
+				if let Opcode::OP_55_SCENE_TITLE(String55Opcode {
+					address,
+					unicode,
+					notes,
+					translation ,
+					..
+				}) = opcode
+				{
+					let translation = translation.as_ref().map(|it| it.as_str().trim()).unwrap_or_default();
+					let notes = notes.as_ref().map(|it| it.as_str().trim()).unwrap_or_default();
+
+					lines.push(format!("[scene title @ 0x{address:08X}]: {unicode}"));
+					lines.push(format!("[translation]: {translation}"));
+					lines.push(format!("[notes]: {notes}"));
+				}
+			}
 			0x90 => {
 				if let Opcode::OP_90_PHANTOM_CHARNAME(StringOpcode2 {
 					address,
@@ -663,7 +704,7 @@ pub fn tl_transform_script(input: &Script) -> String {
 					// lines.push(format!("index {}", i + 1));
 					lines.push(format!("[choices @ 0x{address:08X}]"));
 					for (
-						j,
+						_,
 						Choice {
 							unicode,
 							notes,

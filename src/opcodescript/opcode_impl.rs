@@ -2,7 +2,7 @@ use crate::opcodescript::*;
 use crate::util::*;
 use anyhow::{anyhow, Result};
 
-use bitflags::{bitflags, Flags};
+use bitflags::bitflags;
 use opcodes::*;
 
 impl SingleByteOpcode {
@@ -716,7 +716,7 @@ impl Opcode {
 			0x4F => Ok(Self::OP_4F(B4::new(address, input)?)), // (B<4>),     // : 5,
 			0x51 => Ok(Self::OP_51(B6::new(address, input)?)), // (B<6>), // : 7,
 			0x53 => Ok(Self::OP_53_PHANTOM(B2::new(address, input)?)),
-			0x55 => Ok(Self::OP_55(String55Opcode::new(address, input)?)),
+			0x55 => Ok(Self::OP_55_SCENE_TITLE(String55Opcode::new(address, input)?)),
 			0x56 => {
 				if quirks.contains(Quirks::Phantom) {
 					Ok(Self::OP_56_PHANTOM(B2::new(address, input)?))

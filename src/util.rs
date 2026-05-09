@@ -71,6 +71,7 @@ pub enum SJISChar {
 }
 
 impl SJISChar {
+	#[allow(unused)]
 	fn new(value: char) -> Self {
 		if value.is_ascii() {
 			Self::SingleByte(value as u8)
@@ -342,7 +343,7 @@ macro_rules! opcode_common_action {
 			Opcode::OP_51($op) => $action,
 			Opcode::OP_52_PHANTOM($op) => $action,
 			Opcode::OP_53_PHANTOM($op) => $action,
-			Opcode::OP_55($op) => $action,
+			Opcode::OP_55_SCENE_TITLE($op) => $action,
 			Opcode::OP_56_PHANTOM($op) => $action,
 			Opcode::OP_56_SG2($op) => $action,
 			Opcode::OP_59($op) => $action,

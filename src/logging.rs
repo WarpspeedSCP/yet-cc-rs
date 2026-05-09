@@ -1,4 +1,4 @@
-use log::{Level, Log, Metadata, Record};
+use log::{Level, Metadata, Record};
 use std::env;
 use std::io::Write;
 use std::str::FromStr;

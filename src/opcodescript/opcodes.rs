@@ -714,7 +714,7 @@ pub enum Opcode {
 	OP_51(B6), // : 7,
 	OP_52_PHANTOM(B10),
 	OP_53_PHANTOM(B2),
-	OP_55(String55Opcode),
+	OP_55_SCENE_TITLE(String55Opcode),
 	OP_56_PHANTOM(B2),
 	OP_56_SG2(B4),
 	OP_59(S), // : 1,
