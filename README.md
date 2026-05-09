@@ -93,6 +93,8 @@ This will take all the scripts in the input directory, assemble, combine and rec
 yeti fix --input <a/script/file.yaml> --output <fixed/script/file.yaml>
 ```
 
+> NOTE: The fixing logic is very specific to cross channel right now, and it's likely this code won't work as expected for other games. Use with caution.
+
 This will read the input script file (say, from where you extracted the script) and output a version with corrected spacing. This is useful when lines don't look right onscreen, or to check if you need to split text across multiple text boxes.
 
 If you only need to check if you need to split a line across multiple textboxes, don't specify the output parameter.
