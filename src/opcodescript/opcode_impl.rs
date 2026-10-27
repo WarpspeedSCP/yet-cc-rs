@@ -343,6 +343,30 @@ impl String55Opcode {
 		}
 		.wrap_ok()
 	}
+
+	/// The VM only consumes the first 5 bytes of 0x55: a u32 string address,
+	/// followed by an embedded 0x01 jump that skips over the string.
+	/// Both addresses are file offsets, so they must be recalculated
+	/// whenever the script layout changes.
+	pub fn relocate(&mut self) {
+		let old_text_address =
+			self.arg1 as u32 | (self.padding_1[0] as u32) << 16 | (self.padding_1[1] as u32) << 24;
+		if self.padding_1[2] != 0x01 || old_text_address != self.address + 10 {
+			return;
+		}
+
+		let text_address = self.actual_address + 10;
+		let jump_address = self.actual_address + self.size() as u32;
+
+		let [a, b, c, d] = text_address.to_le_bytes();
+		self.arg1 = u16::from_le_bytes([a, b]);
+		self.padding_1[0] = c;
+		self.padding_1[1] = d;
+
+		let [a, b, c, d] = jump_address.to_le_bytes();
+		self.arg2 = u16::from_le_bytes([a, b]);
+		self.padding_2 = [c, d];
+	}
 }
 
 impl GenericJumpOpcode<4> {
