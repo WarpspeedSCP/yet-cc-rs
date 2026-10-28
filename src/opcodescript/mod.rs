@@ -178,13 +178,14 @@ impl Script {
 							let mut offset: u16 = 4;
 							for i in 1..(custom.skip + 1) {
 								let target_addr = idx + i as usize;
-								let curr_opcode = insert.contents.get(target_addr).cloned().ok_or_else(|| {
-									anyhow!(
+								let curr_opcode =
+									insert.contents.get(target_addr).cloned().ok_or_else(|| {
+										anyhow!(
 										"Can't skip opcode at index {:08X}; there are only {} elements in the inserted block.",
 										target_addr as u32,
 										insert.contents.len()
 									)
-								})?;
+									})?;
 								let curr_offset = curr_opcode.size();
 								offset += curr_offset as u16;
 							}
@@ -221,7 +222,10 @@ impl Script {
 		Ok(output)
 	}
 
-	fn populate_jump_map(&self, opcodes: &mut Vec<Opcode>) -> Result<HashMap<u32, HashMap<u16, usize>>> {
+	fn populate_jump_map(
+		&self,
+		opcodes: &mut Vec<Opcode>,
+	) -> Result<HashMap<u32, HashMap<u16, usize>>> {
 		let mut jump_map: HashMap<u32, HashMap<u16, usize>> = HashMap::new();
 
 		let mut actual_address = self
@@ -306,7 +310,8 @@ impl Script {
 				Opcode::Switch(op) => {
 					let mut jumps = HashMap::<u16, usize>::new();
 					for arm in op.arms.iter() {
-						let opcode = self.opcodes
+						let opcode = self
+							.opcodes
 							.par_iter()
 							.position_any(|it| it.address() == arm.jump_address)
 							.ok_or_else(|| {
@@ -327,9 +332,10 @@ impl Script {
 
 					for (idx, choice) in op.choices.iter().enumerate() {
 						if choice.jump_address == 0 {
-							continue
+							continue;
 						} else {
-							let target = self.opcodes
+							let target = self
+								.opcodes
 								.par_iter()
 								.position_any(|it| it.address() == choice.jump_address)
 								.ok_or_else(|| {
@@ -430,6 +436,10 @@ fn adjust_single_opcode(
 				branch.jump_address = opcodes[tbl_entry[&(idx as u16)]].actual_address()
 			}
 			op.into()
+		}
+		Opcode::OP_55_SCENE_TITLE(mut op) => {
+			op.relocate();
+			Opcode::OP_55_SCENE_TITLE(op)
 		}
 		Opcode::OP_Insert(ins_opcode) => {
 			let mut res: Vec<_> = vec![];

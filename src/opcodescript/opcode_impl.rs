@@ -343,6 +343,30 @@ impl String55Opcode {
 		}
 		.wrap_ok()
 	}
+
+	/// The VM only consumes the first 5 bytes of 0x55: a u32 string address,
+	/// followed by an embedded 0x01 jump that skips over the string.
+	/// Both addresses are file offsets, so they must be recalculated
+	/// whenever the script layout changes.
+	pub fn relocate(&mut self) {
+		let old_text_address =
+			self.arg1 as u32 | (self.padding_1[0] as u32) << 16 | (self.padding_1[1] as u32) << 24;
+		if self.padding_1[2] != 0x01 || old_text_address != self.address + 10 {
+			return;
+		}
+
+		let text_address = self.actual_address + 10;
+		let jump_address = self.actual_address + self.size() as u32;
+
+		let [a, b, c, d] = text_address.to_le_bytes();
+		self.arg1 = u16::from_le_bytes([a, b]);
+		self.padding_1[0] = c;
+		self.padding_1[1] = d;
+
+		let [a, b, c, d] = jump_address.to_le_bytes();
+		self.arg2 = u16::from_le_bytes([a, b]);
+		self.padding_2 = [c, d];
+	}
 }
 
 impl GenericJumpOpcode<4> {
@@ -622,7 +646,10 @@ impl Opcode {
 			0x22 => Ok(Self::OP_22(B4::new(address, input)?)), // (B<4>), // : 5,4
 
 			0x23 => {
-				if quirks.contains(Quirks::CCFC) || quirks.contains(Quirks::Phantom) {
+				if quirks.contains(Quirks::CCFC)
+					|| quirks.contains(Quirks::Phantom)
+					|| quirks.contains(Quirks::LibraryParty)
+				{
 					Ok(Self::OP_23(B8::new(address, input)?)) // (B<8>), // : 9,
 				} else {
 					Ok(Self::OP_23_PSP(B6::new(address, input)?))
@@ -650,20 +677,22 @@ impl Opcode {
 
 			0x34 => Ok(Self::OP_34(B10::new(address, input)?)), // (B<10>), // : 11,
 
-			0x36 => {
-				if quirks.contains(Quirks::LibraryParty) {
-					Ok(Self::OP_36_LP(B2::new(address, input)?))
-				} else {
-					Ok(Self::OP_36(B3::new(address, input)?)) // (B<3>),  // : 4,
-				}
-			}
+			0x36 => Ok(Self::OP_36(B3::new(address, input)?)), // (B<3>),  // : 4,
 
 			0x37 => Ok(Self::OP_37(S::new(address, input)?)), // : 1
 			0x3F => {
 				if quirks.contains(Quirks::LibraryParty) {
-					Ok(Self::OP_3F_LP(B3::new(address, input)?))
+					Ok(Self::OP_3F_LP(B2::new(address, input)?))
 				} else {
 					Err(anyhow!("Bad use of 3F without quirks at address 0x{address:08X}. This script might be meant for Library Party (add the \"lp\" quirk)."))
+				}
+			}
+
+			0x40 => {
+				if quirks.contains(Quirks::LibraryParty) {
+					Ok(Self::OP_40_LP(S::new(address, input)?))
+				} else {
+					Err(anyhow!("Bad use of 40 without quirks at address 0x{address:08X}. This script might be meant for Library Party (add the \"lp\" quirk)."))
 				}
 			}
 
@@ -716,7 +745,9 @@ impl Opcode {
 			0x4F => Ok(Self::OP_4F(B4::new(address, input)?)), // (B<4>),     // : 5,
 			0x51 => Ok(Self::OP_51(B6::new(address, input)?)), // (B<6>), // : 7,
 			0x53 => Ok(Self::OP_53_PHANTOM(B2::new(address, input)?)),
-			0x55 => Ok(Self::OP_55_SCENE_TITLE(String55Opcode::new(address, input)?)),
+			0x55 => Ok(Self::OP_55_SCENE_TITLE(String55Opcode::new(
+				address, input,
+			)?)),
 			0x56 => {
 				if quirks.contains(Quirks::Phantom) {
 					Ok(Self::OP_56_PHANTOM(B2::new(address, input)?))
@@ -748,7 +779,7 @@ impl Opcode {
 				} else if quirks.contains(Quirks::XBoxRoot) {
 					Ok(Self::OP_7A_ROOT_XBOX(B10::new(address, input)?))
 				} else if quirks.contains(Quirks::LibraryParty) {
-					Ok(Self::OP_7A_LP_B10(B10::new(address, input)?))
+					Ok(Self::OP_7A_LP(B10::new(address, input)?))
 				} else {
 					Err(anyhow!("Bad use of 7A without quirks at address 0x{address:08X}. This script might be meant for Secret Garden 2 (add the \"sg2\" quirk) or root double (add the \"rootx360\" quirk) or Library Party (add the \"lp\" quirk)."))
 				}
